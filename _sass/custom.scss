@@ -794,7 +794,8 @@ body.page-collections {
   background: rgba(20, 10, 40, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 255, 204, 0.2);
+  border: 1px solid rgba(0, 255, 204, 0.45);
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.12);
   border-radius: 10px;
   overflow: hidden;
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -804,8 +805,9 @@ body.page-collections {
     transform: translateY(-3px);
     border-color: var(--card-accent, #00ffcc);
     box-shadow:
-      0 0 20px rgba(0, 255, 204, 0.12),
-      0 8px 32px rgba(0, 0, 0, 0.3);
+      0 0 20px rgba(0, 255, 204, 0.30),
+      0 0 40px rgba(0, 255, 204, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.4);
 
     .book-title a { color: var(--card-accent, #00ffcc); }
   }

@@ -4,7 +4,7 @@
 
   const COLORS = ['#00ffcc', '#ff00aa', '#ff6b00', '#cc00ff', '#00e5ff'];
   const ORB_COUNT = 5;
-  const OPACITY = 0.18;
+  const OPACITY = 0.30;
 
   // 存储 animationId 以便通过 cancelAnimationFrame 终止循环（fix: issue #7）
   let animationId = null;
@@ -22,7 +22,7 @@
       y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.4,
       vy: (Math.random() - 0.5) * 0.4,
-      radius: 200 + Math.random() * 250,
+      radius: 300 + Math.random() * 350,
       color: COLORS[i % COLORS.length],
     }));
   }
