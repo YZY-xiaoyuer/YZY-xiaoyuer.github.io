@@ -902,3 +902,34 @@ body.page-collections {
 
   .hero-title { font-size: 1.3rem; }
 }
+
+/* ==========================================================
+   Aurora 极光背景 — 全局配色 & 透明 body
+   ========================================================== */
+
+/* body 透明让 canvas 透出来 */
+body { background: transparent !important; }
+
+[data-bs-theme='dark'] body { background: transparent !important; }
+
+/* 侧边栏毛玻璃 */
+[data-bs-theme='dark'] #sidebar {
+  background: rgba(8, 8, 20, 0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid rgba(0, 229, 255, 0.12) !important;
+}
+
+/* 顶栏毛玻璃 */
+[data-bs-theme='dark'] #topbar-wrapper {
+  background: rgba(8, 8, 20, 0.80) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.10) !important;
+}
+
+/* 导航激活项霓虹 */
+[data-bs-theme='dark'] #sidebar .nav-link.active {
+  color: #00E5FF !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.8), 0 0 20px rgba(0, 229, 255, 0.4);
+}
