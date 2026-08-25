@@ -261,6 +261,25 @@
   &:hover h2 { color: #00ffcc !important; }
 }
 
+/* .card 组件 — 毛玻璃 + 霓虹边框 + hover 发光
+   守卫：深色背景和霓虹边框仅在暗色模式启用，浅色模式保留 Chirpy 默认卡片样式。*/
+[data-bs-theme='dark'] .card {
+  background: rgba(20, 10, 40, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 204, 0.3) !important;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    border-color: rgba(0, 255, 204, 0.7) !important;
+    box-shadow:
+      0 0 12px rgba(0, 255, 204, 0.35),
+      0 0 32px rgba(255, 0, 170, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
 /* 文章元信息 */
 .post-meta {
   font-size: 0.82rem;

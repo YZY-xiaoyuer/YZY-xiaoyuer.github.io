@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const COLORS = ['#00ffcc', '#ff00aa', '#ff6b00', '#7c3aed', '#0066ff'];
+  const COLORS = ['#00ffcc', '#ff00aa', '#ff6b00', '#cc00ff', '#00e5ff'];
   const ORB_COUNT = 5;
   const OPACITY = 0.18;
 
