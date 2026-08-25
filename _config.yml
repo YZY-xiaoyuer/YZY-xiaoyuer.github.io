@@ -44,17 +44,17 @@ plugins:
 # 1. Enable Discussions in GitHub repo Settings
 # 2. Visit https://giscus.app, configure your repo, copy repo_id and category_id
 # 3. Uncomment and fill in the fields below
-# comments:
-#   active: giscus
-#   giscus:
-#     repo: YZY-xiaoyuer/YZY-xiaoyuer.github.io
-#     repo_id: ""         # from giscus.app
-#     category: General
-#     category_id: ""     # from giscus.app
-#     mapping: pathname
-#     input_position: bottom
-#     lang: zh-CN
-#     reactions_enabled: 1
+comments:
+  active: giscus
+  giscus:
+    repo: YZY-xiaoyuer/YZY-xiaoyuer.github.io
+    repo_id: "R_kgDOUAuoWg"
+    category: General
+    category_id: "DIC_kwDOUAuoWs4DEIrH"
+    mapping: pathname
+    input_position: bottom
+    lang: zh-CN
+    reactions_enabled: 1
 
 # Timezone
 timezone: Asia/Shanghai
@@ -66,5 +66,5 @@ defaults:
       type: posts
     values:
       layout: post
-      comments: false
+      comments: true
       toc: true
