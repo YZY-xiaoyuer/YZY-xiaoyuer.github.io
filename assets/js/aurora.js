@@ -1,144 +1,115 @@
+// aurora.js — Cyberpunk Neon ORB Background
 (function () {
-  function init() {
-    // 文章详情页不加载极光（检测 Chirpy post 布局标志元素）
-    if (document.querySelector('#post-wrapper, .post-content article, article.post')) return;
+  'use strict';
 
-    // 创建并插入 canvas
+  const COLORS = ['#00ffcc', '#ff00aa', '#ff6b00', '#cc00ff', '#00e5ff'];
+  const ORB_COUNT = 5;
+  const OPACITY = 0.18;
+
+  // 存储 animationId 以便通过 cancelAnimationFrame 终止循环（fix: issue #7）
+  let animationId = null;
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+  }
+
+  function createOrbs(w, h) {
+    return Array.from({ length: ORB_COUNT }, (_, i) => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      radius: 200 + Math.random() * 250,
+      color: COLORS[i % COLORS.length],
+    }));
+  }
+
+  // 停止动画循环并移除 canvas 元素（fix: issue #6 #7）
+  function cleanup() {
+    if (animationId !== null) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    const existing = document.getElementById('aurora-canvas');
+    if (existing) existing.remove();
+  }
+
+  function init() {
+    // 不在浅色模式启用（检测 documentElement 的 data-bs-theme）
+    if (document.documentElement.getAttribute('data-bs-theme') === 'light') return;
+
+    // 防止重复初始化（主题切换触发时 canvas 可能已存在）
+    if (document.getElementById('aurora-canvas')) return;
+
     const canvas = document.createElement('canvas');
-    canvas.id = 'aurora-bg';
+    canvas.id = 'aurora-canvas';
     canvas.style.cssText =
-      'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;';
+      'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
+      'z-index:-1;pointer-events:none;';
     document.body.prepend(canvas);
 
     const ctx = canvas.getContext('2d');
-    let W, H, stars = [];
-    let mountainPath = null;
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
 
-    // ── resize ─────────────────────────────────────────────────────
-    function resize() {
-      W = canvas.width  = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      buildStars();
-      buildMountain();
-    }
+    let orbs = createOrbs(w, h);
 
-    // ── stars ───────────────────────────────────────────────────────
-    function buildStars() {
-      stars = Array.from({ length: 300 }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H * 0.75,
-        r: Math.random() * 1.5 + 0.3,
-        speed: Math.random() * 0.15 + 0.02,
-        phase: Math.random() * Math.PI * 2,
-      }));
-    }
+    window.addEventListener('resize', () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    });
 
-    function drawStars(t) {
-      stars.forEach(s => {
-        const alpha = 0.4 + 0.6 * Math.abs(Math.sin(s.phase + t * s.speed));
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+
+      orbs.forEach((orb) => {
+        const rgb = hexToRgb(orb.color);
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${OPACITY})`);
+        grad.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},${OPACITY * 0.4})`);
+        grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+        ctx.fillStyle = grad;
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
         ctx.fill();
+
+        // Move
+        orb.x += orb.vx;
+        orb.y += orb.vy;
+        if (orb.x < -orb.radius) orb.x = w + orb.radius;
+        if (orb.x > w + orb.radius) orb.x = -orb.radius;
+        if (orb.y < -orb.radius) orb.y = h + orb.radius;
+        if (orb.y > h + orb.radius) orb.y = -orb.radius;
       });
+
+      // fix issue #7: 存储返回值以支持 cancelAnimationFrame
+      animationId = requestAnimationFrame(draw);
     }
 
-    // ── mountain silhouette ─────────────────────────────────────────
-    function buildMountain() {
-      mountainPath = new Path2D();
-      const pts = [
-        [0,         H],
-        [0,         H * 0.82],
-        [W * 0.06,  H * 0.70],
-        [W * 0.13,  H * 0.76],
-        [W * 0.20,  H * 0.60],
-        [W * 0.27,  H * 0.72],
-        [W * 0.35,  H * 0.55],
-        [W * 0.42,  H * 0.67],
-        [W * 0.50,  H * 0.50],
-        [W * 0.58,  H * 0.63],
-        [W * 0.65,  H * 0.53],
-        [W * 0.73,  H * 0.68],
-        [W * 0.80,  H * 0.58],
-        [W * 0.87,  H * 0.73],
-        [W * 0.94,  H * 0.64],
-        [W,         H * 0.78],
-        [W,         H],
-      ];
-      mountainPath.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) mountainPath.lineTo(pts[i][0], pts[i][1]);
-      mountainPath.closePath();
-    }
-
-    function drawMountain() {
-      ctx.fillStyle = '#1A1A3E';
-      ctx.fill(mountainPath);
-      ctx.strokeStyle = 'rgba(30, 30, 80, 0.6)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke(mountainPath);
-    }
-
-    // ── aurora beam ─────────────────────────────────────────────────
-    function drawBeam(cx, cy, angle, spread, c1, c2, alpha, t, phase) {
-      const a = angle + Math.sin(t * 0.3 + phase) * 0.08;
-      const len = Math.hypot(W, H) * 1.4;
-      const x0 = cx + Math.cos(a - spread / 2) * len;
-      const y0 = cy + Math.sin(a - spread / 2) * len;
-      const x1 = cx + Math.cos(a + spread / 2) * len;
-      const y1 = cy + Math.sin(a + spread / 2) * len;
-
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, len);
-      g.addColorStop(0,   c1.replace('A', (alpha * 0.9).toFixed(2)));
-      g.addColorStop(0.35, c1.replace('A', (alpha * 0.5).toFixed(2)));
-      g.addColorStop(0.7,  c2.replace('A', (alpha * 0.2).toFixed(2)));
-      g.addColorStop(1,    c2.replace('A', '0'));
-
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.closePath();
-      ctx.fillStyle = g;
-      ctx.fill();
-    }
-
-    // ── render loop ─────────────────────────────────────────────────
-    function render(ts) {
-      const t = ts * 0.001;
-
-      ctx.fillStyle = '#0A0A14';
-      ctx.fillRect(0, 0, W, H);
-
-      drawStars(t);
-
-      // cyan main beam
-      drawBeam(W * 0.50, H * 1.05, -Math.PI / 2, 2.0,
-        'rgba(0,229,255,A)', 'rgba(0,180,220,A)', 0.45, t, 0);
-
-      // magenta secondary beam
-      drawBeam(W * 0.55, H * 1.10, -Math.PI / 2 + 0.3, 1.2,
-        'rgba(255,45,120,A)', 'rgba(180,0,90,A)', 0.42, t, 1.8);
-
-      // soft teal accent
-      drawBeam(W * 0.44, H * 1.05, -Math.PI / 2 - 0.25, 0.8,
-        'rgba(0,255,200,A)', 'rgba(0,200,160,A)', 0.25, t, 3.2);
-
-      drawMountain();
-
-      // top vignette
-      const v = ctx.createLinearGradient(0, 0, 0, H * 0.35);
-      v.addColorStop(0, 'rgba(10,10,20,0.7)');
-      v.addColorStop(1, 'rgba(10,10,20,0)');
-      ctx.fillStyle = v;
-      ctx.fillRect(0, 0, W, H);
-
-      requestAnimationFrame(render);
-    }
-
-    window.addEventListener('resize', resize);
-    resize();
-    requestAnimationFrame(render);
+    draw();
   }
+
+  // fix issue #6: 监听运行时主题切换，浅色模式下清理 canvas；切回暗色模式时重启
+  const themeObserver = new MutationObserver(() => {
+    const theme = document.documentElement.getAttribute('data-bs-theme');
+    if (theme === 'light') {
+      cleanup();
+    } else {
+      init();
+    }
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-bs-theme'],
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

@@ -1,117 +1,938 @@
-/* ═══════════════════════════════════════════════════
-   YZY Blog — Cyberpunk / Aurora 科技感主题
-   迭代 1：星空极光背景 + 霓虹配色
-   ═══════════════════════════════════════════════════ */
+/* YZY Blog — Cyberpunk Neon Visual Layer
+   ──────────────────────────────────────────────────────────
+   此文件是唯一的 CSS 覆盖入口。jekyll-theme-chirpy.scss 只含 @use 指令。
+   所有变量覆盖和组件样式均写在这里，确保在 Chirpy 默认样式之后输出并生效。
+   ========================================================== */
 
-/* ── 全局背景透明（让 canvas 透出来）─────────────── */
-[data-mode="dark"] body,
-body {
-  background: transparent !important;
+/* ── 深色模式：赛博朋克霓虹色系 ──
+   注：以下变量以赛博朋克意图为准，覆盖 Chirpy 的 GitHub-dark 默认值：
+   · --text-color      #e0e0ff  (vs Chirpy #c9d1d9)
+   · --heading-color   #e0e0ff  (vs Chirpy #e6edf3)
+   · --card-hover-bg   rgba(20,10,40,0.85)  (vs Chirpy #1c2128)
+   · --blockquote-border-color  #ff00aa (pink, vs Chirpy #00ffcc)
+   · --topbar-bg       rgba(5,5,16,0.88)  (vs Chirpy rgba(13,17,23,0.85))
+   ── */
+[data-bs-theme='dark'] {
+  --main-bg: #050510;
+  --main-border-color: #21262d;
+  --mask-bg: #0a0520;
+
+  --text-color: #e0e0ff;
+  --text-muted-color: #8b949e;
+  --text-muted-highlight-color: #b1bac4;
+  --heading-color: #e0e0ff;
+  --label-color: #8b949e;
+
+  --link-color: #00ffcc;
+  --link-underline-color: rgba(0, 255, 204, 0.3);
+
+  --button-bg: #161b22;
+  --btn-border-color: #30363d;
+  --btn-patina-color: #00ffcc;
+
+  /* ── 侧边栏 ── */
+  --site-title-color: #e6edf3;
+  --site-subtitle-color: #8b949e;
+  --sidebar-bg: #03030d;
+  --sidebar-border-color: #21262d;
+  --sidebar-muted-color: #8b949e;
+  --sidebar-active-color: #00ffcc;
+  --sidebar-hover-bg: rgba(0, 255, 204, 0.08);
+  --sidebar-btn-bg: #161b22;
+  --sidebar-btn-color: #8b949e;
+  --avatar-border-color: #00ffcc;
+
+  /* ── Topbar ── */
+  --topbar-bg: rgba(5, 5, 16, 0.88);
+  --topbar-text-color: #c9d1d9;
+  --search-border-color: #30363d;
+  --search-icon-color: #8b949e;
+  --input-focus-border-color: #00ffcc;
+
+  /* ── 文章列表 ── */
+  --post-list-text-color: #c9d1d9;
+  --card-bg: rgba(20, 10, 40, 0.65);
+  --card-header-bg: #1c2128;
+  --card-hover-bg: rgba(20, 10, 40, 0.85);
+  --card-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 255, 204, 0.12);
+
+  /* ── Tags & Categories ── */
+  --tag-border: rgba(0, 255, 204, 0.3);
+  --tag-shadow: #0d1117;
+  --tag-hover: rgba(0, 255, 204, 0.12);
+  --search-tag-bg: #161b22;
+  --toc-highlight: #00ffcc;
+
+  /* ── 代码高亮 ── */
+  --language-border-color: #30363d;
+  --highlight-bg-color: #0d1117;
+  --highlighter-rouge-color: #79c0ff;
+  --inline-code-bg: rgba(0, 255, 204, 0.08);
+  --code-color: #c9d1d9;
+  --code-header-text-color: #8b949e;
+  --code-header-muted-color: #21262d;
+  --code-header-icon-color: #8b949e;
+  --filepath-text-color: #c9d1d9;
+
+  /* ── 其他 ── */
+  --blockquote-border-color: #ff00aa;
+  --blockquote-text-color: #8b949e;
+  --timeline-color: #21262d;
+  --timeline-node-bg: #00ffcc;
+  --dash-color: #30363d;
+  --categories-border: rgba(0, 255, 204, 0.15);
+  --categories-hover-bg: rgba(0, 255, 204, 0.08);
+  --menu-bg: #161b22;
+  --menu-border-color: rgba(0, 255, 204, 0.2);
+  --btn-paginator-hover-color: #1c2128;
 }
 
-/* ── Dark 模式：赛博朋克色系变量 ─────────────────── */
-[data-mode="dark"] {
-  --color-bg:              #0A0A14;
-  --color-bg-alt:          rgba(12, 12, 24, 0.75);
-
-  /* 强调色：青色霓虹 */
-  --link-color:            #00E5FF;
-  --link-underline-color:  rgba(0, 229, 255, 0.25);
-  --btn-patina-color:      #00E5FF;
-  --sidebar-active-color:  #00E5FF;
+/* ── 浅色模式：WCAG AA 合规色调 ──
+   修复：#0891b2 在白底对比度 3.68:1，低于 WCAG AA 4.5:1 阈值。
+   改用 #006e8f（对比度约 5.2:1），同时更新所有使用该色调的变量。
+   ── */
+[data-bs-theme='light'] {
+  --link-color: #006e8f;
+  --link-underline-color: rgba(0, 110, 143, 0.25);
+  --sidebar-active-color: #006e8f;
+  --sidebar-hover-bg: rgba(0, 110, 143, 0.06);
+  --avatar-border-color: #006e8f;
+  --toc-highlight: #006e8f;
+  --tag-border: rgba(0, 110, 143, 0.3);
+  --tag-hover: rgba(0, 110, 143, 0.08);
+  --input-focus-border-color: #006e8f;
+  --blockquote-border-color: #006e8f;
+  --timeline-node-bg: #006e8f;
 }
 
-/* ── Light 模式保持原有 Teal 风格 ────────────────── */
-:root {
-  --link-color:            #0d9488;
-  --link-underline-color:  rgba(13, 148, 136, 0.3);
-  --btn-patina-color:      #0d9488;
-  --sidebar-active-color:  #0d9488;
+/* ==========================================================
+   侧边栏美化
+   ========================================================== */
+
+[data-bs-theme='dark'] #sidebar {
+  background: linear-gradient(
+    175deg,
+    #060a12 0%,
+    #0a0e1a 40%,
+    #071018 100%
+  ) !important;
+  border-right: 1px solid rgba(0, 255, 204, 0.12) !important;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #00ffcc, transparent);
+    opacity: 0.4;
+  }
 }
 
-/* ── 侧边栏：毛玻璃半透明 ───────────────────────── */
-[data-mode="dark"] #sidebar {
-  background: rgba(8, 8, 20, 0.82) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-right: 1px solid rgba(0, 229, 255, 0.12);
+.site-title {
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+
+  a {
+    background: linear-gradient(135deg, #e6edf3 0%, #00ffcc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
-/* ── 侧边栏导航激活项：霓虹发光 ─────────────────── */
-[data-mode="dark"] #sidebar .nav-link.active,
-[data-mode="dark"] #sidebar .nav-item.active > .nav-link {
-  color: #00E5FF !important;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.8),
-               0 0 20px rgba(0, 229, 255, 0.4);
+.site-subtitle {
+  font-size: 0.78rem !important;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
 }
 
-/* ── 侧边栏站点标题 ──────────────────────────────── */
-[data-mode="dark"] #sidebar .site-title a {
-  color: #00E5FF !important;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
-  letter-spacing: 0.05em;
+/* 侧边栏导航项
+   修复：去除 transition:all（会包含 padding/margin/width 等布局触发属性），
+   仅对不触发 layout 的视觉属性设 transition。
+   结构属性全局保留，霓虹颜色守卫到暗色模式（fix: issue #8）。*/
+#sidebar .nav-item .nav-link {
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  position: relative;
 }
 
-/* ── 文章列表卡片：青色左边框 + 悬停发光 ────────── */
-[data-mode="dark"] .post-preview,
-[data-mode="dark"] article.card {
-  background: rgba(10, 10, 24, 0.70) !important;
-  border-left: 2px solid #00E5FF;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.15),
-              inset 0 0 30px rgba(0, 229, 255, 0.03);
-  backdrop-filter: blur(8px);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+[data-bs-theme='dark'] #sidebar .nav-item .nav-link {
+  &.active,
+  &:hover {
+    color: #00ffcc !important;
+  }
+
+  &.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #00ffcc;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+  }
 }
 
-[data-mode="dark"] .post-preview:hover,
-[data-mode="dark"] article.card:hover {
-  border-color: #FF2D78;
-  box-shadow: 0 0 18px rgba(255, 45, 120, 0.35),
-              0 0 6px rgba(0, 229, 255, 0.2);
+/* 激活项额外霓虹发光效果 — 守卫：文字阴影仅在暗色模式启用 */
+[data-bs-theme='dark'] #sidebar .nav-item.active .nav-link {
+  color: #00ffcc !important;
+  text-shadow:
+    0 0 8px rgba(0, 255, 204, 0.8),
+    0 0 20px rgba(0, 255, 204, 0.4);
 }
 
-/* ── 文章标题链接：悬停霓虹 ──────────────────────── */
-[data-mode="dark"] .post-preview .post-title a:hover,
-[data-mode="dark"] h1 a:hover,
-[data-mode="dark"] h2 a:hover {
-  color: #00E5FF !important;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+[data-bs-theme='dark'] #sidebar .nav-item.active {
+  background: rgba(0, 255, 204, 0.06);
+  border-radius: 6px;
 }
 
-/* ── 标签：品红色系 ──────────────────────────────── */
-[data-mode="dark"] .post-tags .tag,
-[data-mode="dark"] .tag-item {
-  border-color: rgba(255, 45, 120, 0.5) !important;
-  color: #FF2D78 !important;
+/* 头像发光边框 */
+.avatar img {
+  border: 2px solid rgba(0, 255, 204, 0.5) !important;
+  box-shadow:
+    0 0 16px rgba(0, 255, 204, 0.25),
+    0 0 32px rgba(0, 255, 204, 0.1) !important;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow:
+      0 0 20px rgba(0, 255, 204, 0.5),
+      0 0 40px rgba(0, 255, 204, 0.2) !important;
+  }
 }
 
-[data-mode="dark"] .post-tags .tag:hover {
-  background: rgba(255, 45, 120, 0.15);
-  box-shadow: 0 0 8px rgba(255, 45, 120, 0.4);
+/* 侧边栏社交按钮
+   修复：去除 transition:all，仅对 color / transform（合成属性）过渡。*/
+#sidebar .sidebar-bottom .btn {
+  transition: color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    color: #00ffcc !important;
+    transform: translateY(-1px);
+  }
 }
 
-/* ── 代码块：青色左边框 ──────────────────────────── */
-[data-mode="dark"] div.highlight,
-[data-mode="dark"] pre.highlight {
-  border-left: 3px solid #00E5FF;
-  background: rgba(0, 0, 15, 0.85) !important;
+/* 全局隐藏 Trending Tags sidebar section */
+#panel-wrapper section:has(.post-tag) {
+  display: none !important;
 }
 
-/* ── topbar / navbar ─────────────────────────────── */
-[data-mode="dark"] #topbar-wrapper,
-[data-mode="dark"] .topbar {
-  background: rgba(8, 8, 20, 0.80) !important;
+/* ==========================================================
+   文章列表
+   ========================================================== */
+
+/* 毛玻璃 + 霓虹边框 + hover 发光
+   修复：去除 padding-left 动画（强制全量 layout reflow），
+   改为仅对 box-shadow / border-color（不触发 layout）过渡。
+   守卫：深色背景和霓虹边框仅在暗色模式启用，避免浅色模式显示深紫遮罩。*/
+[data-bs-theme='dark'] .post-preview {
+  background: rgba(20, 10, 40, 0.65);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 229, 255, 0.10);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 204, 0.3) !important;
+  border-bottom: none !important;
+  border-radius: 8px;
+  padding: 1rem !important;
+  margin-bottom: 0.8rem;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    border-color: rgba(0, 255, 204, 0.7) !important;
+    box-shadow:
+      0 0 12px rgba(0, 255, 204, 0.35),
+      0 0 32px rgba(255, 0, 170, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.5);
+
+    &::before { display: none; }
+
+    .preview-img img { transform: scale(1.02); }
+  }
+
+  h1, h2 { transition: color 0.2s ease; }
+
+  &:hover h1,
+  &:hover h2 { color: #00ffcc !important; }
 }
 
-/* ── 全局链接过渡 ────────────────────────────────── */
-a { transition: color 0.2s ease, text-shadow 0.2s ease; }
+/* .card 组件 — 毛玻璃 + 霓虹边框 + hover 发光
+   守卫：深色背景和霓虹边框仅在暗色模式启用，浅色模式保留 Chirpy 默认卡片样式。*/
+[data-bs-theme='dark'] .card {
+  background: rgba(20, 10, 40, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 204, 0.3) !important;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 
-/* ── 滚动条：细线青色→品红渐变 ──────────────────── */
-[data-mode="dark"] ::-webkit-scrollbar { width: 4px; }
-[data-mode="dark"] ::-webkit-scrollbar-track { background: #0A0A14; }
-[data-mode="dark"] ::-webkit-scrollbar-thumb {
-  background: linear-gradient(#00E5FF, #FF2D78);
-  border-radius: 2px;
+  &:hover {
+    border-color: rgba(0, 255, 204, 0.7) !important;
+    box-shadow:
+      0 0 12px rgba(0, 255, 204, 0.35),
+      0 0 32px rgba(255, 0, 170, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* 文章元信息 */
+.post-meta {
+  font-size: 0.82rem;
+  opacity: 0.7;
+
+  a {
+    transition: color 0.15s ease;
+
+    &:hover { color: #00ffcc !important; }
+  }
+}
+
+/* ==========================================================
+   链接与标签
+   ========================================================== */
+
+a { transition: color 0.2s ease; }
+
+/* Tag 标签
+   修复：去除 transition:all，改为仅对视觉属性（不含布局属性）过渡。*/
+.tag {
+  border: 1px solid var(--tag-border) !important;
+  border-radius: 20px !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.2s ease !important;
+  font-size: 0.75rem !important;
+
+  &:hover {
+    background: var(--tag-hover) !important;
+    border-color: #00ffcc !important;
+    box-shadow: 0 0 8px rgba(0, 255, 204, 0.2) !important;
+    transform: translateY(-1px);
+  }
+}
+
+/* Trending Tags 链接 */
+#access-lastmod a,
+.post-tag a {
+  &:hover { color: #00ffcc !important; }
+}
+
+/* ==========================================================
+   代码块
+   修复：原 custom.scss 中 border-left + border-color 顺序错误。
+   border-color 是简写属性，会覆盖四边颜色（含左边），导致 border-left 设的
+   颜色（#00ffcc）被后面的 border-color（rgba 半透明）抵消。
+   正确做法：先用 border 设全边细框，再用 border-left 覆盖左边。
+   ========================================================== */
+
+div.highlight,
+pre.highlight {
+  border: 1px solid rgba(0, 255, 204, 0.12) !important;
+  border-radius: 8px !important;
+  border-left: 3px solid #00ffcc !important;
+}
+
+code { border-radius: 4px !important; }
+
+.highlight .hll { background-color: rgba(0, 255, 204, 0.08); }
+
+/* ==========================================================
+   Topbar & 搜索
+   ========================================================== */
+
+#topbar-wrapper {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(0, 255, 204, 0.08) !important;
+}
+
+#search-input:focus {
+  border-color: #00ffcc !important;
+  box-shadow: 0 0 0 3px rgba(0, 255, 204, 0.12) !important;
+}
+
+/* ==========================================================
+   右侧面板（Recently Updated）
+   ========================================================== */
+
+.panel-heading {
+  font-size: 0.8rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  opacity: 0.8;
+}
+
+/* 守卫：#00ffcc 在白底对比度 ~1.28:1，远低于 WCAG AA；仅暗色模式使用霓虹色 */
+[data-bs-theme='dark'] .panel-heading {
+  color: #00ffcc !important;
+}
+
+/* ==========================================================
+   目录 (TOC)
+   ========================================================== */
+
+#toc li a {
+  transition: color 0.15s ease;
+
+  &:hover,
+  &.active { color: #00ffcc !important; }
+}
+
+/* ==========================================================
+   Blockquote
+   使用 var(--blockquote-border-color) 以响应主题切换：
+   深色模式 = #ff00aa（赛博朋克粉红），浅色模式 = #006e8f（合规深青）
+   ========================================================== */
+
+blockquote {
+  border-left: 3px solid var(--blockquote-border-color) !important;
+  background: rgba(0, 255, 204, 0.04) !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+
+/* ==========================================================
+   自定义滚动条（WebKit）
+   ========================================================== */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+
+::-webkit-scrollbar-track { background: transparent; }
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 204, 0.25);
+  border-radius: 3px;
+
+  &:hover { background: rgba(0, 255, 204, 0.45); }
+}
+
+/* ==========================================================
+   回到顶部按钮
+   修复：去除 transition:all，仅对合成属性（background-color / box-shadow /
+   transform）过渡，避免触发意外的布局重排。
+   ========================================================== */
+
+/* 守卫：霓虹背景和颜色仅在暗色模式启用，浅色模式下保留 Chirpy 默认按钮样式 */
+[data-bs-theme='dark'] #back-to-top {
+  background: rgba(0, 255, 204, 0.15) !important;
+  border: 1px solid rgba(0, 255, 204, 0.3) !important;
+  color: #00ffcc !important;
+  backdrop-filter: blur(8px);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+
+  &:hover {
+    background: rgba(0, 255, 204, 0.25) !important;
+    box-shadow: 0 0 16px rgba(0, 255, 204, 0.3) !important;
+    transform: translateY(-2px) !important;
+  }
+}
+
+/* ==========================================================
+   页脚
+   ========================================================== */
+
+footer { border-top: 1px solid rgba(0, 255, 204, 0.08) !important; }
+
+/* ==========================================================
+   文章内容页
+   ========================================================== */
+
+h1, h2, h3, h4, h5, h6 { scroll-margin-top: 4rem; }
+
+.post-content h2 {
+  border-bottom: 1px solid rgba(0, 255, 204, 0.15);
+  padding-bottom: 0.3rem;
+}
+
+/* ==========================================================
+   响应式：移动端（max-width: 849px）
+   ========================================================== */
+
+@media (max-width: 849px) {
+  [data-bs-theme='dark'] #sidebar {
+    background: linear-gradient(160deg, #060a12 0%, #0a0e1a 100%) !important;
+  }
+}
+
+/* ==========================================================
+   专栏页面 — 布局覆盖
+   ========================================================== */
+
+body.page-collections {
+  #panel-wrapper { display: none !important; }
+
+  .post-tail-wrapper,
+  #post-nav,
+  #disqus_thread { display: none !important; }
+}
+
+.collections-page { min-height: calc(100vh - 4rem); }
+
+/* ==========================================================
+   侧边栏专栏目录（JS 注入）
+   ========================================================== */
+
+.sidebar-collections {
+  margin: 0.5rem 0 0.2rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid rgba(0, 255, 204, 0.1);
+  border-bottom: 1px solid rgba(0, 255, 204, 0.1);
+}
+
+.sidebar-col-label {
+  font-size: 0.63rem;
+  font-weight: 600;
+  color: #00ffcc;
+  opacity: 0.55;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 1.1rem 0.45rem;
+
+  i { margin-right: 0.35rem; }
+}
+
+.sidebar-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li { margin: 0; }
+}
+
+/* 修复对比度 + transition:all
+   原色 rgba(200,210,220,0.45) 在 #03030d 背景上混合后约 #5b606a，对比度 ~3.26:1，
+   低于 WCAG AA 4.5:1 阈值。改用 #7d8fa3，对比度约 6.6:1，满足 AA 标准。*/
+.sidebar-col-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.42rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: #7d8fa3;
+  cursor: pointer;
+  font-size: 0.82rem;
+  gap: 0.55rem;
+  text-align: left;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  border-left: 3px solid transparent;
+
+  i {
+    width: 1rem;
+    text-align: center;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    transition: color 0.18s ease;
+  }
+
+  .col-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .col-badge {
+    font-size: 0.62rem;
+    background: rgba(0, 255, 204, 0.07);
+    color: rgba(0, 255, 204, 0.6);
+    border-radius: 10px;
+    padding: 0.05rem 0.4rem;
+    min-width: 1.2rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: rgba(0, 255, 204, 0.06);
+    color: #c9d1d9;
+
+    i { color: rgba(0, 255, 204, 0.7); }
+  }
+
+  &.active {
+    background: rgba(0, 255, 204, 0.09);
+    color: var(--col-accent, #00ffcc);
+    border-left-color: var(--col-accent, #00ffcc);
+
+    i { color: var(--col-accent, #00ffcc); }
+
+    .col-badge {
+      background: rgba(0, 255, 204, 0.14);
+      color: var(--col-accent, #00ffcc);
+      font-weight: 600;
+    }
+  }
+}
+
+/* ==========================================================
+   Hero 横幅
+   ========================================================== */
+
+/* 守卫：fallback 颜色 #0d1117/#161b22 为硬编码暗色，浅色模式下显示为黑底横幅。
+   整个 hero 块仅在暗色模式启用，浅色模式下退回 Chirpy 默认布局。 */
+[data-bs-theme='dark'] .collections-hero {
+  position: relative;
+  padding: 2.5rem 2.5rem 2rem;
+  background: linear-gradient(var(--hero-gradient, 135deg, #0d1117 0%, #161b22 100%));
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 255, 204, 0.1);
+  transition: background 0.4s ease;
+  min-height: 160px;
+
+  .hero-aurora {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 80% at 10% 50%, rgba(0, 255, 204, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 90% 20%, rgba(167, 139, 250, 0.06) 0%, transparent 60%);
+    animation: aurora-drift 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  .hero-body {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: rgba(0, 255, 204, 0.12);
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    color: var(--hero-accent, #00ffcc);
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
+  }
+
+  .hero-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-desc {
+    color: #8b949e;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 600px;
+  }
+}
+
+@keyframes aurora-drift {
+  from { transform: translateX(0) scale(1); }
+  to   { transform: translateX(20px) scale(1.05); }
+}
+
+/* ==========================================================
+   分组圆球区
+   修复：去除 transition:all，仅对合成属性过渡。
+   ========================================================== */
+
+.group-spheres-section {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid rgba(0, 255, 204, 0.06);
+}
+
+.group-spheres-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  i { color: #00ffcc; }
+}
+
+.group-clear-btn {
+  margin-left: auto;
+  background: rgba(0, 255, 204, 0.1);
+  border: 1px solid rgba(0, 255, 204, 0.25);
+  color: #00ffcc;
+  border-radius: 20px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover { background: rgba(0, 255, 204, 0.2); }
+}
+
+.group-spheres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.group-sphere {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 50%,
+      transparent 100%
+    ),
+    #0d1117;
+  border: 1px solid rgba(0, 255, 204, 0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 0.7rem;
+  color: #8b949e;
+  gap: 0.35rem;
+  text-align: center;
+  line-height: 1.2;
+  padding: 0.4rem;
+
+  i {
+    font-size: 1.2rem;
+    color: var(--sphere-accent, #00ffcc);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  span {
+    display: block;
+    font-size: 0.68rem;
+    max-width: 72px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    transform: scale(1.08) translateY(-2px);
+    border-color: var(--sphere-accent, #00ffcc);
+    box-shadow:
+      0 0 16px rgba(0, 255, 204, 0.2),
+      0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #c9d1d9;
+
+    i { opacity: 1; }
+  }
+
+  &.active {
+    border-color: var(--sphere-accent, #00ffcc);
+    background:
+      radial-gradient(
+        circle at 35% 30%,
+        rgba(0, 255, 204, 0.15) 0%,
+        rgba(0, 255, 204, 0.05) 60%,
+        transparent 100%
+      ),
+      #0d1117;
+    box-shadow:
+      0 0 24px rgba(0, 255, 204, 0.3),
+      inset 0 0 16px rgba(0, 255, 204, 0.06);
+    color: #e6edf3;
+    transform: scale(1.05);
+
+    i { opacity: 1; }
+  }
+}
+
+/* ==========================================================
+   文章卡片网格
+   修复：去除 transition:all，仅对合成属性（transform / border-color /
+   box-shadow）过渡，避免 hover 时触发布局重排。
+   ========================================================== */
+
+.collections-grid-section { padding: 1.5rem 2rem 2rem; }
+
+.collections-grid-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  i { color: #00ffcc; }
+}
+
+.grid-count {
+  margin-left: auto;
+  background: rgba(0, 255, 204, 0.1);
+  color: #00ffcc;
+  border-radius: 10px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.72rem;
+}
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+}
+
+.book-card {
+  display: flex;
+  background: rgba(20, 10, 40, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 204, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: var(--card-accent, #00ffcc);
+    box-shadow:
+      0 0 20px rgba(0, 255, 204, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.3);
+
+    .book-title a { color: var(--card-accent, #00ffcc); }
+  }
+}
+
+.book-spine {
+  width: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(
+    180deg,
+    var(--card-accent, #00ffcc) 0%,
+    rgba(0, 255, 204, 0.3) 100%
+  );
+}
+
+.book-body {
+  flex: 1;
+  padding: 1rem 1.1rem;
+  min-width: 0;
+}
+
+.book-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.book-cat {
+  font-size: 0.68rem;
+  color: var(--card-accent, #00ffcc);
+  background: rgba(0, 255, 204, 0.08);
+  border: 1px solid rgba(0, 255, 204, 0.2);
+  border-radius: 20px;
+  padding: 0.1rem 0.5rem;
+}
+
+.book-date {
+  font-size: 0.68rem;
+  color: #8b949e;
+  margin-left: auto;
+}
+
+.book-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  a {
+    color: #e6edf3;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+}
+
+.book-desc {
+  font-size: 0.8rem;
+  color: #8b949e;
+  line-height: 1.5;
+  margin: 0 0 0.6rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.book-tag {
+  font-size: 0.65rem;
+  color: #6e7681;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #21262d;
+  border-radius: 20px;
+  padding: 0.1rem 0.4rem;
+}
+
+.collections-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #8b949e;
+
+  i {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+    opacity: 0.5;
+  }
+
+  p { margin: 0; font-size: 0.9rem; }
+}
+
+/* ==========================================================
+   响应式：专栏页面
+   移动端修复：
+   · .hero-title 规则需使用 .collections-hero .hero-title 以匹配父级
+     (.collections-hero .hero-title) 的特异性，避免被桌面规则覆盖。
+   ========================================================== */
+
+@media (max-width: 991px) {
+  .collections-hero { padding: 2rem 1.5rem 1.5rem; }
+  .group-spheres-section { padding: 1.2rem 1.5rem 0.8rem; }
+  .collections-grid-section { padding: 1.2rem 1.5rem 2rem; }
+}
+
+@media (max-width: 767px) {
+  .group-sphere {
+    width: 72px;
+    height: 72px;
+    font-size: 0.65rem;
+
+    i { font-size: 1rem; }
+  }
+
+  .collections-grid { grid-template-columns: 1fr; }
+
+  /* 修复：特异性对齐，确保覆盖 .collections-hero .hero-title { font-size: 1.6rem } */
+  .collections-hero .hero-title { font-size: 1.3rem; }
 }
