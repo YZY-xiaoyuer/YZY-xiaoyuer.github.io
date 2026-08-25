@@ -1,0 +1,110 @@
+- key: ai-agent
+  title: "AI Agent 开发"
+  description: "从 LLM 基础到多智能体系统，AI Agent 工程化实战"
+  icon: "fas fa-robot"
+  category_match:
+    - "AI Agent 开发"
+  accent: "#a78bfa"
+  gradient: "135deg, #1a1040 0%, #2d1b69 100%"
+  groups:
+    - key: llm-basics
+      title: "LLM 基础"
+      icon: "fas fa-brain"
+      tags: ["LLM", "Prompt工程", "Claude"]
+    - key: agent-framework
+      title: "框架与工具"
+      icon: "fas fa-cubes"
+      tags: ["LangChain", "RAG", "工具调用"]
+    - key: multi-agent
+      title: "多智能体"
+      icon: "fas fa-network-wired"
+      tags: ["多智能体", "AI Agent"]
+
+- key: cpp
+  title: "C++ 工程实践"
+  description: "现代 C++ 语言特性、工程工具链与高性能编程"
+  icon: "fas fa-code"
+  category_match:
+    - "C++ 工程实践"
+  accent: "#38bdf8"
+  gradient: "135deg, #0c2d48 0%, #145374 100%"
+  groups:
+    - key: modern-cpp
+      title: "现代 C++"
+      icon: "fas fa-layer-group"
+      tags: ["C++11", "C++17", "C++20", "STL"]
+    - key: toolchain
+      title: "工具链"
+      icon: "fas fa-tools"
+      tags: ["CMake"]
+    - key: performance
+      title: "性能优化"
+      icon: "fas fa-tachometer-alt"
+      tags: ["性能优化", "并发"]
+
+- key: linux-app
+  title: "Linux 应用开发"
+  description: "系统调用、网络编程、IPC 到高性能服务器全栈"
+  icon: "fab fa-linux"
+  category_match:
+    - "Linux 应用开发"
+  accent: "#34d399"
+  gradient: "135deg, #052e16 0%, #064e3b 100%"
+  groups:
+    - key: sys-prog
+      title: "系统编程"
+      icon: "fas fa-terminal"
+      tags: ["系统编程", "Linux"]
+    - key: network
+      title: "网络编程"
+      icon: "fas fa-server"
+      tags: ["网络编程", "高性能服务器"]
+    - key: ipc
+      title: "进程通信"
+      icon: "fas fa-exchange-alt"
+      tags: ["IPC"]
+
+- key: embedded
+  title: "嵌入式开发"
+  description: "从 MCU 裸机到 Linux 内核驱动的完整技术栈"
+  icon: "fas fa-microchip"
+  category_match:
+    - "嵌入式基础"
+    - "驱动开发"
+  accent: "#fb923c"
+  gradient: "135deg, #431407 0%, #7c2d12 100%"
+  groups:
+    - key: mcu
+      title: "MCU 裸机"
+      icon: "fas fa-cpu"
+      tags: ["嵌入式", "ARM", "Cortex-M"]
+    - key: rtos
+      title: "RTOS"
+      icon: "fas fa-clock"
+      tags: ["RTOS", "FreeRTOS"]
+    - key: linux-driver
+      title: "Linux 驱动"
+      icon: "fas fa-puzzle-piece"
+      tags: ["Linux驱动"]
+
+- key: tools
+  title: "工具与效率"
+  description: "终端、编辑器、调试器与工程效率工具体系"
+  icon: "fas fa-wrench"
+  category_match:
+    - "工具与效率"
+  accent: "#facc15"
+  gradient: "135deg, #1c1400 0%, #422006 100%"
+  groups:
+    - key: terminal-editor
+      title: "终端与编辑器"
+      icon: "fas fa-keyboard"
+      tags: ["Neovim", "tmux", "Shell"]
+    - key: vcs
+      title: "版本控制"
+      icon: "fab fa-git-alt"
+      tags: ["Git"]
+    - key: debug
+      title: "调试与分析"
+      icon: "fas fa-bug"
+      tags: ["调试", "性能分析"]
