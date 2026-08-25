@@ -57,10 +57,6 @@ comments:
     lang: zh-CN
     reactions_enabled: 1
 
-# Custom scripts — aurora.js 检测文章页后自行跳过，仅在专栏首页生效
-head_scripts:
-  - /assets/js/aurora.js
-
 # Timezone
 timezone: Asia/Shanghai
 
