@@ -3,6 +3,7 @@ title: 专栏
 icon: fas fa-book-open
 order: 0
 layout: page
+permalink: /collections/
 ---
 
 <div class="collections-page" id="collections-page">
