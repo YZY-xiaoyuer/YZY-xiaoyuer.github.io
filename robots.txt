@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yzy-xiaoyuer.github.io/sitemap.xml
