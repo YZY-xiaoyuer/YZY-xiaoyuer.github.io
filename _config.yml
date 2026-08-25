@@ -60,8 +60,20 @@ comments:
 # Timezone
 timezone: Asia/Shanghai
 
+# Collections — 必须定义 tabs 集合，Chirpy 的 _tabs/*.md 才会被处理
+collections:
+  tabs:
+    output: true
+    sort_by: order
+
 # Defaults
 defaults:
+  - scope:
+      path: "_tabs"
+      type: tabs
+    values:
+      layout: page
+      permalink: /:title/
   - scope:
       path: ""
       type: posts
