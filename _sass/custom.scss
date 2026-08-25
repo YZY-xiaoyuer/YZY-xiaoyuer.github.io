@@ -1,21 +1,117 @@
-/* YZY Blog — Teal accent overrides */
+/* ═══════════════════════════════════════════════════
+   YZY Blog — Cyberpunk / Aurora 科技感主题
+   迭代 1：星空极光背景 + 霓虹配色
+   ═══════════════════════════════════════════════════ */
 
-:root {
-  --link-color: #0d9488;
-  --link-underline-color: rgba(13, 148, 136, 0.3);
-  --btn-patina-color: #0d9488;
-  --sidebar-active-color: #0d9488;
+/* ── 全局背景透明（让 canvas 透出来）─────────────── */
+[data-mode="dark"] body,
+body {
+  background: transparent !important;
 }
 
+/* ── Dark 模式：赛博朋克色系变量 ─────────────────── */
 [data-mode="dark"] {
-  --link-color: #2dd4bf;
-  --link-underline-color: rgba(45, 212, 191, 0.3);
-  --btn-patina-color: #2dd4bf;
-  --sidebar-active-color: #2dd4bf;
+  --color-bg:              #0A0A14;
+  --color-bg-alt:          rgba(12, 12, 24, 0.75);
+
+  /* 强调色：青色霓虹 */
+  --link-color:            #00E5FF;
+  --link-underline-color:  rgba(0, 229, 255, 0.25);
+  --btn-patina-color:      #00E5FF;
+  --sidebar-active-color:  #00E5FF;
 }
 
-div.highlight, pre.highlight {
-  border-left: 3px solid var(--link-color);
+/* ── Light 模式保持原有 Teal 风格 ────────────────── */
+:root {
+  --link-color:            #0d9488;
+  --link-underline-color:  rgba(13, 148, 136, 0.3);
+  --btn-patina-color:      #0d9488;
+  --sidebar-active-color:  #0d9488;
 }
 
-a { transition: color 0.2s ease; }
+/* ── 侧边栏：毛玻璃半透明 ───────────────────────── */
+[data-mode="dark"] #sidebar {
+  background: rgba(8, 8, 20, 0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid rgba(0, 229, 255, 0.12);
+}
+
+/* ── 侧边栏导航激活项：霓虹发光 ─────────────────── */
+[data-mode="dark"] #sidebar .nav-link.active,
+[data-mode="dark"] #sidebar .nav-item.active > .nav-link {
+  color: #00E5FF !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.8),
+               0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+/* ── 侧边栏站点标题 ──────────────────────────────── */
+[data-mode="dark"] #sidebar .site-title a {
+  color: #00E5FF !important;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+  letter-spacing: 0.05em;
+}
+
+/* ── 文章列表卡片：青色左边框 + 悬停发光 ────────── */
+[data-mode="dark"] .post-preview,
+[data-mode="dark"] article.card {
+  background: rgba(10, 10, 24, 0.70) !important;
+  border-left: 2px solid #00E5FF;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.15),
+              inset 0 0 30px rgba(0, 229, 255, 0.03);
+  backdrop-filter: blur(8px);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+[data-mode="dark"] .post-preview:hover,
+[data-mode="dark"] article.card:hover {
+  border-color: #FF2D78;
+  box-shadow: 0 0 18px rgba(255, 45, 120, 0.35),
+              0 0 6px rgba(0, 229, 255, 0.2);
+}
+
+/* ── 文章标题链接：悬停霓虹 ──────────────────────── */
+[data-mode="dark"] .post-preview .post-title a:hover,
+[data-mode="dark"] h1 a:hover,
+[data-mode="dark"] h2 a:hover {
+  color: #00E5FF !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+}
+
+/* ── 标签：品红色系 ──────────────────────────────── */
+[data-mode="dark"] .post-tags .tag,
+[data-mode="dark"] .tag-item {
+  border-color: rgba(255, 45, 120, 0.5) !important;
+  color: #FF2D78 !important;
+}
+
+[data-mode="dark"] .post-tags .tag:hover {
+  background: rgba(255, 45, 120, 0.15);
+  box-shadow: 0 0 8px rgba(255, 45, 120, 0.4);
+}
+
+/* ── 代码块：青色左边框 ──────────────────────────── */
+[data-mode="dark"] div.highlight,
+[data-mode="dark"] pre.highlight {
+  border-left: 3px solid #00E5FF;
+  background: rgba(0, 0, 15, 0.85) !important;
+}
+
+/* ── topbar / navbar ─────────────────────────────── */
+[data-mode="dark"] #topbar-wrapper,
+[data-mode="dark"] .topbar {
+  background: rgba(8, 8, 20, 0.80) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.10);
+}
+
+/* ── 全局链接过渡 ────────────────────────────────── */
+a { transition: color 0.2s ease, text-shadow 0.2s ease; }
+
+/* ── 滚动条：细线青色→品红渐变 ──────────────────── */
+[data-mode="dark"] ::-webkit-scrollbar { width: 4px; }
+[data-mode="dark"] ::-webkit-scrollbar-track { background: #0A0A14; }
+[data-mode="dark"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(#00E5FF, #FF2D78);
+  border-radius: 2px;
+}
