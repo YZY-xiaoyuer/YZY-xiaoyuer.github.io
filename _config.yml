@@ -2,12 +2,69 @@ theme: jekyll-theme-chirpy
 
 # Site settings
 title: YZY Blog
-description: 技术学习笔记与知识分享
+tagline: 嵌入式 · Linux · C++ · AI Agent 技术笔记
+description: 技术学习笔记与知识分享，聚焦嵌入式开发、Linux系统编程、C++工程实践与AI Agent开发。
 baseurl: ""
 url: "https://yzy-xiaoyuer.github.io"
+
+# Author
+author:
+  name: YZY
+  url: https://github.com/YZY-xiaoyuer
+
+# Avatar (place image at assets/img/avatar.jpg)
+avatar: /assets/img/avatar.jpg
+
+# Social links
+social:
+  name: YZY
+  email: ""
+  links:
+    - https://github.com/YZY-xiaoyuer
 
 # Pagination
 paginate: 10
 
 # Search
 search: true
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+  - jekyll-paginate
+  - jekyll-seo-tag
+  - jekyll-feed
+
+# Google Analytics (GA4)
+# google_analytics:
+#   id: "G-XXXXXXXXXX"   # Replace with your GA4 Measurement ID after setup
+
+# Comments — Giscus
+# Steps to enable:
+# 1. Enable Discussions in GitHub repo Settings
+# 2. Visit https://giscus.app, configure your repo, copy repo_id and category_id
+# 3. Uncomment and fill in the fields below
+# comments:
+#   active: giscus
+#   giscus:
+#     repo: YZY-xiaoyuer/YZY-xiaoyuer.github.io
+#     repo_id: ""         # from giscus.app
+#     category: General
+#     category_id: ""     # from giscus.app
+#     mapping: pathname
+#     input_position: bottom
+#     lang: zh-CN
+#     reactions_enabled: 1
+
+# Timezone
+timezone: Asia/Shanghai
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      comments: false
+      toc: true
