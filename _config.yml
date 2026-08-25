@@ -1,4 +1,5 @@
 theme: jekyll-theme-chirpy
+theme_mode: dark   # 默认深色模式，用户可切换
 
 # Site settings
 title: YZY Blog
