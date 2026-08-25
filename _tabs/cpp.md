@@ -4,7 +4,7 @@ icon: fas fa-code
 order: 4
 ---
 
-<div class="collections-hero" style="--hero-gradient: 135deg, #0c2d48 0%, #145374 100%; --hero-accent: #38bdf8">
+<div class="collections-hero" style="--hero-gradient: 135deg, #020d1a 0%, #041828 100%; --hero-accent: #00e5ff">
   <div class="hero-aurora"></div>
   <div class="hero-body">
     <div class="hero-icon"><i class="fas fa-code"></i></div>
@@ -42,7 +42,7 @@ order: 4
         {% endif %}
       {% endfor %}
       {% if matched %}
-        <article class="book-card" style="--card-accent: #38bdf8">
+        <article class="book-card" style="--card-accent: #00e5ff">
           <div class="book-spine"></div>
           <div class="book-body">
             <div class="book-meta">

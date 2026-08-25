@@ -4,7 +4,7 @@ icon: fas fa-wrench
 order: 5
 ---
 
-<div class="collections-hero" style="--hero-gradient: 135deg, #1c1400 0%, #422006 100%; --hero-accent: #facc15">
+<div class="collections-hero" style="--hero-gradient: 135deg, #140800 0%, #200d00 100%; --hero-accent: #ff6b00">
   <div class="hero-aurora"></div>
   <div class="hero-body">
     <div class="hero-icon"><i class="fas fa-wrench"></i></div>
@@ -42,7 +42,7 @@ order: 5
         {% endif %}
       {% endfor %}
       {% if matched %}
-        <article class="book-card" style="--card-accent: #facc15">
+        <article class="book-card" style="--card-accent: #ff6b00">
           <div class="book-spine"></div>
           <div class="book-body">
             <div class="book-meta">

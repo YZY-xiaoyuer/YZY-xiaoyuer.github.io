@@ -4,7 +4,7 @@ icon: fab fa-linux
 order: 1
 ---
 
-<div class="collections-hero" style="--hero-gradient: 135deg, #052e16 0%, #064e3b 100%; --hero-accent: #34d399">
+<div class="collections-hero" style="--hero-gradient: 135deg, #020d14 0%, #041c22 100%; --hero-accent: #00ffcc">
   <div class="hero-aurora"></div>
   <div class="hero-body">
     <div class="hero-icon"><i class="fab fa-linux"></i></div>
@@ -42,7 +42,7 @@ order: 1
         {% endif %}
       {% endfor %}
       {% if matched %}
-        <article class="book-card" style="--card-accent: #34d399">
+        <article class="book-card" style="--card-accent: #00ffcc">
           <div class="book-spine"></div>
           <div class="book-body">
             <div class="book-meta">

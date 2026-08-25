@@ -4,7 +4,7 @@ icon: fas fa-microchip
 order: 2
 ---
 
-<div class="collections-hero" style="--hero-gradient: 135deg, #431407 0%, #7c2d12 100%; --hero-accent: #fb923c">
+<div class="collections-hero" style="--hero-gradient: 135deg, #140408 0%, #200510 100%; --hero-accent: #ff00aa">
   <div class="hero-aurora"></div>
   <div class="hero-body">
     <div class="hero-icon"><i class="fas fa-microchip"></i></div>
@@ -42,7 +42,7 @@ order: 2
         {% endif %}
       {% endfor %}
       {% if matched %}
-        <article class="book-card" style="--card-accent: #fb923c">
+        <article class="book-card" style="--card-accent: #ff00aa">
           <div class="book-spine"></div>
           <div class="book-body">
             <div class="book-meta">
