@@ -482,16 +482,16 @@ gantt
 
 ```mermaid
 flowchart TD
-    subgraph 初始化（仅一次）
-        CODE["原始代码\n10,000+ tokens"]
+    subgraph A["初始化（仅一次）"]
+        CODE["原始代码\n10000 tokens"]
         ANALYZE["知识库构建任务\n分析一次，存结果"]
-        SUMMARY["架构摘要 ~300 tokens\n接口摘要 ~200 tokens\n规范摘要 ~200 tokens"]
+        SUMMARY["架构摘要 约300 tokens\n接口摘要 约200 tokens\n规范摘要 约200 tokens"]
         CODE --> ANALYZE --> SUMMARY
     end
 
-    subgraph 运行时（每次节点开会话）
+    subgraph B["运行时（每次节点开会话）"]
         FETCH["assemblePrompt()"]
-        INJ["注入摘要 ~700 tokens\n而非原始代码"]
+        INJ["注入摘要 约700 tokens\n而非原始代码"]
         OD["按需拉取完整内容\n仅少数节点需要"]
     end
 
