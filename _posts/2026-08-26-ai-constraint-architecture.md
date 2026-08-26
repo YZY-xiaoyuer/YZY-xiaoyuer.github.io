@@ -192,7 +192,7 @@ export const skillTemplates = sqliteTable('skill_templates', {
 技能库是第 2-5 层约束模板的统一管理入口。下图为设计原型，视觉风格与平台现有 UI 一致：
 
 ![技能库 UI 设计原型](/assets/img/posts/ai-constraint/mockup-skill-library.png)
-_技能库：内置 9 个阶段技能（蓝色左边框）+ 用户自建技能（绿色左边框）+ 门控技能（黄色左边框）_
+_技能库：紫色左边框 = 系统上下文技能（第2层，绑定到项目）；蓝色 = 内置阶段技能（第3/4/5层）；绿色 = 自定义；黄色 = 门控_
 
 每张技能卡片展示：工具白名单（第 3 层）、出口条件（第 5 层）、模型配置。
 
@@ -201,7 +201,7 @@ _技能库：内置 9 个阶段技能（蓝色左边框）+ 用户自建技能�
 技能编辑器将 4 层约束在同一界面清晰呈现，左侧配置基本信息和工具权限，右侧分层编辑约束内容：
 
 ![技能编辑器 UI 设计原型](/assets/img/posts/ai-constraint/mockup-skill-editor.png)
-_技能编辑器：右侧按层顺序展示系统上下文（第2层）、工具权限（第3层）、阶段约束（第4层）、出口门控（第5层）_
+_阶段技能编辑器：不含第2层（第2层由项目选择的系统上下文技能提供）；右侧仅编辑第3层工具权限、第4层阶段约束、第5层出口门控_
 
 ### 工作流构建器（约束分配给节点）
 
@@ -351,41 +351,56 @@ export async function assembleSessionPrompt(taskId: string, nodeId: string) {
 
 ## 七、技能与约束的关系
 
-技能不是独立于约束之外的东西，**技能是第 3、4、5 层约束的打包单位**：
+技能不是独立于约束之外的东西，但不同层级的约束对应**不同类型的技能**。
+
+### 技能库分为两种技能类型
 
 ```mermaid
 flowchart LR
-    subgraph 约束理论层
-        L3["第3层：工具访问"]
-        L4["第4层：阶段约束"]
-        L5["第5层：出口门控"]
+    subgraph 技能库
+        CT["🌐 系统上下文技能\n（第2层）\n嵌入式开发上下文\nWeb开发上下文\n数据分析上下文"]
+        ST["⚙️ 阶段技能\n（第3+4+5层）\n需求讨论 / 代码开发\n方案评审 / 代码提交..."]
     end
 
-    subgraph 技能「代码开发」
-        S3["tools:\nbash / file_editor / git_worktree"]
-        S4["system_prompt:\n禁魔法数字 / TDD / CC≤10"]
-        S5["exit_criteria:\nlint:pass / coverage≥80"]
+    subgraph 使用时机
+        TASK["创建项目时\n选择一个系统上下文技能"]
+        NODE["工作流节点\n选择一个阶段技能"]
     end
 
-    L3 -.实现.-> S3
-    L4 -.实现.-> S4
-    L5 -.实现.-> S5
+    CT -->|绑定到| TASK
+    ST -->|绑定到| NODE
 
-    style L3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
-    style L4 fill:#3d2f00,stroke:#e3b341,color:#e3b341
-    style L5 fill:#3d1f1f,stroke:#f85149,color:#f85149
-    style S3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
-    style S4 fill:#3d2f00,stroke:#e3b341,color:#e3b341
-    style S5 fill:#3d1f1f,stroke:#f85149,color:#f85149
+    style CT fill:#2d1f4a,stroke:#bc8cff,color:#bc8cff
+    style ST fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style TASK fill:#1c2d4a,stroke:#388bfd,color:#58a6ff
+    style NODE fill:#1a3a2a,stroke:#3fb950,color:#3fb950
 ```
 
-第 2 层不属于技能——它属于任务，所有技能共享同一个任务上下文。一个技能可以被不同任务下的多个节点复用，这正是技能库存在的意义：
+**关键区别：**
 
-| 变了什么 | 只需修改 | 无需修改 |
-|----------|---------|---------|
-| 换项目（STM32 → ESP32） | 任务第 2 层 | 9 个技能全部复用 |
-| 代码规范升级（TDD → BDD） | 代码开发技能第 4 层 | 所有任务自动生效 |
-| 新增工作流 | 创建工作流，拖拽绑定现有技能 | 技能本身不动 |
+| 技能类型 | 包含层级 | 绑定对象 | 编辑器内容 |
+|---------|---------|---------|-----------|
+| 系统上下文技能 | 仅第2层 | 项目/任务（必选一个）| 只有一个 system_prompt 文本框 |
+| 阶段技能 | 第3+4+5层 | 工作流节点 | 工具勾选 + 阶段约束 + 出口门控 |
+
+**阶段技能编辑器不含第2层**，因为第2层由项目创建时选择的系统上下文技能提供，和具体阶段无关。一个系统上下文技能可以被多个项目复用——定义一次"嵌入式开发上下文"，所有嵌入式项目共享。
+
+**DB Schema 对应：**
+
+```typescript
+skillTemplates: {
+  id, name,
+  type: 'system_context' | 'stage',  // 区分两种技能类型
+  systemPrompt: text,        // 两种类型都有（内容含义不同）
+  toolsJson: text,           // 仅 stage 类型有效
+  exitCriteriaJson: text,    // 仅 stage 类型有效
+}
+
+tasks: {
+  systemContextSkillId: text  // FK → skill_templates（type='system_context'）
+  // 替代原来的 systemContext: text（自由文本），改为从技能库选择
+}
+```
 
 ---
 
@@ -558,7 +573,7 @@ AI 约束不是一句 Prompt 能解决的问题，它是一个需要分层管理
 
 | 问题 | 答案 |
 |------|------|
-| 技能和约束是什么关系？ | 技能 = 第 3/4/5 层约束的具名打包单位，可跨节点复用 |
+| 技能和约束是什么关系？ | 技能库分两类：系统上下文技能（第2层）绑定到项目；阶段技能（第3/4/5层）绑定到节点 |
 | 第 2 层归属哪里？ | 任务级（项目级），创建任务时必填，所有工作流共享 |
 | 独立会话如何注入第 2 层？ | 每次开会话从 DB 实时读取，DB 是跨会话的"记忆" |
 | 多工作流重复分析怎么解决？ | 项目知识库预计算摘要，注入摘要而不是原始代码，节省 ~92% token |
