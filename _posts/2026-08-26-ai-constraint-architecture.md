@@ -4,6 +4,7 @@ date: 2026-08-26 10:00:00 +0800
 categories: [Linux]
 tags: [AI开发平台, Prompt工程, AI约束, 架构设计, Harness, 工作流, 技能库]
 description: 以 AI 嵌入式开发协作平台为工程案例，系统拆解 AI 约束的 5 层架构，详解 UI 设计、存储方案对比与运行时注入机制，给出可落地的完整设计方案。
+mermaid: true
 image:
   path: /assets/img/posts/ai-constraint/platform-workflow.png
   alt: AI 开发平台 9 阶段工作流看板
