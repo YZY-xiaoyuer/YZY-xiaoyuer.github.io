@@ -199,7 +199,7 @@ _技能库：内置 9 个阶段技能（蓝色左边框）+ 用户自建技能�
 技能编辑器将 4 层约束在同一界面清晰呈现，左侧配置基本信息和工具权限，右侧分层编辑约束内容：
 
 ![技能编辑器 UI 设计原型](/assets/img/posts/ai-constraint/mockup-skill-editor.png)
-_技能编辑器：左侧工具勾选（第3层）、右侧分层展示系统上下文（第2层）、阶段约束（第4层）、出口门控（第5层）_
+_技能编辑器：右侧按层顺序展示系统上下文（第2层）、工具权限（第3层）、阶段约束（第4层）、出口门控（第5层）_
 
 ### 工作流构建器（约束分配给节点）
 
@@ -239,6 +239,7 @@ flowchart LR
 ## 五、运行时约束注入架构
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#21262d', 'actorTextColor': '#e6edf3', 'actorLineColor': '#388bfd', 'actorBorder': '#388bfd', 'signalColor': '#58a6ff', 'signalTextColor': '#e6edf3', 'labelBoxBkgColor': '#21262d', 'labelBoxBorderColor': '#388bfd', 'labelTextColor': '#e6edf3', 'loopTextColor': '#e6edf3', 'noteBkgColor': '#3d2f00', 'noteTextColor': '#e3b341', 'noteBorderColor': '#e3b341', 'activationBkgColor': '#1c2d4a', 'activationBorderColor': '#388bfd', 'background': '#0d1117', 'sequenceNumberColor': '#e6edf3'}}}%%
 sequenceDiagram
     participant U as 用户
     participant F as 前端
