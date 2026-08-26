@@ -71,6 +71,8 @@ flowchart TD
 **当前平台存放位置：** `CLAUDE.md`（本地文件，静态）
 **改造目标：** 存入数据库 `tasks.system_context` 字段，UI 可编辑，按任务差异化配置
 
+> **设计规则：第 2 层是创建任务的必填字段。** 没有第 2 层，节点的第 4 层约束（如"禁止直接操作硬件寄存器"）会失去技术上下文，AI 不知道这是什么项目、什么硬件平台。平台提供内置模板（嵌入式开发 / Web 开发 / 数据分析）降低填写门槛。
+
 ---
 
 ### 第 3 层：工具访问层
@@ -236,7 +238,50 @@ flowchart LR
 
 ---
 
-## 五、运行时约束注入架构
+## 五、任务层级与约束归属
+
+真实项目不是一个任务对应一个工作流，而是有层级的——总项目下有多个子分组，每个子分组下有多个工作流：
+
+```mermaid
+flowchart TD
+    P["🏗️ 总项目\nAI 嵌入式开发平台\n第2层约束：硬件平台 / 全局技术规范"]
+    G1["📁 子分组：蓝牙通信模块"]
+    G2["📁 子分组：OTA 更新模块"]
+    G3["📁 子分组：传感器固件"]
+    W1["⚙️ 工作流：BLE 协议栈开发"]
+    W2["⚙️ 工作流：BLE Bug 修复"]
+    W3["⚙️ 工作流：OTA 安全加固"]
+    N1(["节点：需求讨论\n绑定技能A"])
+    N2(["节点：代码开发\n绑定技能D"])
+
+    P -->|第2层共享| G1
+    P -->|第2层共享| G2
+    P -->|第2层共享| G3
+    G1 --> W1
+    G1 --> W2
+    G2 --> W3
+    W1 --> N1 --> N2
+
+    style P fill:#1c2d4a,stroke:#388bfd,color:#58a6ff
+    style G1 fill:#21262d,stroke:#484f58,color:#8b949e
+    style G2 fill:#21262d,stroke:#484f58,color:#8b949e
+    style G3 fill:#21262d,stroke:#484f58,color:#8b949e
+    style W1 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style W2 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style W3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+```
+
+**约束归属原则：**
+
+| 层级 | 约束内容 | 作用范围 |
+|------|---------|---------|
+| 总项目 | 第 2 层：技术栈 / 硬件平台 / 全局规范 | 所有子分组、所有工作流共享 |
+| 子分组 | 分组级共享资料：模块接口文档、模块规范 | 仅本分组内的工作流 |
+| 工作流节点 | 第 3/4/5 层（技能）| 仅当前节点生效 |
+
+---
+
+## 六、运行时约束注入架构
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#21262d', 'actorTextColor': '#e6edf3', 'actorLineColor': '#388bfd', 'actorBorder': '#388bfd', 'signalColor': '#58a6ff', 'signalTextColor': '#e6edf3', 'labelBoxBkgColor': '#21262d', 'labelBoxBorderColor': '#388bfd', 'labelTextColor': '#e6edf3', 'loopTextColor': '#e6edf3', 'noteBkgColor': '#3d2f00', 'noteTextColor': '#e3b341', 'noteBorderColor': '#e3b341', 'activationBkgColor': '#1c2d4a', 'activationBorderColor': '#388bfd', 'background': '#0d1117', 'sequenceNumberColor': '#e6edf3'}}}%%
@@ -304,7 +349,47 @@ export async function assembleSessionPrompt(taskId: string, nodeId: string) {
 
 ---
 
-## 六、技能库与工作流构建器的关系
+## 七、技能与约束的关系
+
+技能不是独立于约束之外的东西，**技能是第 3、4、5 层约束的打包单位**：
+
+```mermaid
+flowchart LR
+    subgraph 约束理论层
+        L3["第3层：工具访问"]
+        L4["第4层：阶段约束"]
+        L5["第5层：出口门控"]
+    end
+
+    subgraph 技能「代码开发」
+        S3["tools:\nbash / file_editor / git_worktree"]
+        S4["system_prompt:\n禁魔法数字 / TDD / CC≤10"]
+        S5["exit_criteria:\nlint:pass / coverage≥80"]
+    end
+
+    L3 -.实现.-> S3
+    L4 -.实现.-> S4
+    L5 -.实现.-> S5
+
+    style L3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style L4 fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style L5 fill:#3d1f1f,stroke:#f85149,color:#f85149
+    style S3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style S4 fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style S5 fill:#3d1f1f,stroke:#f85149,color:#f85149
+```
+
+第 2 层不属于技能——它属于任务，所有技能共享同一个任务上下文。一个技能可以被不同任务下的多个节点复用，这正是技能库存在的意义：
+
+| 变了什么 | 只需修改 | 无需修改 |
+|----------|---------|---------|
+| 换项目（STM32 → ESP32） | 任务第 2 层 | 9 个技能全部复用 |
+| 代码规范升级（TDD → BDD） | 代码开发技能第 4 层 | 所有任务自动生效 |
+| 新增工作流 | 创建工作流，拖拽绑定现有技能 | 技能本身不动 |
+
+---
+
+## 八、技能库与工作流构建器的关系
 
 ```mermaid
 flowchart TD
@@ -335,7 +420,7 @@ flowchart TD
 
 ---
 
-## 七、当前平台的改造路径
+## 九、当前平台的改造路径
 
 ```mermaid
 gantt
@@ -368,13 +453,114 @@ gantt
 
 ---
 
+## 十、项目知识库：消除重复 Token 消耗
+
+### 问题
+
+总项目下有多个子分组，每个子分组有多个工作流，所有工作流都需要了解项目的代码架构、接口定义、编码规范。如果每个节点都重新分析一遍原始代码：
+
+- 10,000 行代码 → 每次分析 10,000+ tokens
+- 10 个工作流 × 9 个节点 = 90 次重复分析
+- **大量 token 消耗在"AI 已经知道"的事情上**
+
+### 解决方案：预计算摘要，按需取用
+
+```mermaid
+flowchart TD
+    subgraph 初始化（仅一次）
+        CODE["原始代码\n10,000+ tokens"]
+        ANALYZE["知识库构建任务\n分析一次，存结果"]
+        SUMMARY["架构摘要 ~300 tokens\n接口摘要 ~200 tokens\n规范摘要 ~200 tokens"]
+        CODE --> ANALYZE --> SUMMARY
+    end
+
+    subgraph 运行时（每次节点开会话）
+        FETCH["assemblePrompt()"]
+        INJ["注入摘要 ~700 tokens\n而非原始代码"]
+        OD["按需拉取完整内容\n仅少数节点需要"]
+    end
+
+    SUMMARY -->|从 DB 读摘要| FETCH
+    FETCH --> INJ
+    FETCH -.节点声明需要时.-> OD
+
+    style ANALYZE fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style SUMMARY fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style INJ fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style OD fill:#1c2d4a,stroke:#388bfd,color:#58a6ff
+```
+
+### 数据库设计
+
+```typescript
+export const projectContext = sqliteTable('project_context', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  groupId: text('group_id'),                   // 可选：绑定到子分组
+  type: text('type').notNull(),                // 'architecture' | 'api_spec' | 'coding_standards'
+  title: text('title').notNull(),
+  summary: text('summary').notNull(),          // 预分析摘要，~300-500 tokens，始终注入
+  fullContent: text('full_content'),           // 完整内容，按需拉取
+  sourceFilePaths: text('source_file_paths'),  // 来源文件，变更时触发失效
+  isStale: integer('is_stale', { mode: 'boolean' }).default(false),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+```
+
+### 注入策略（按层级按需）
+
+```
+assemblePrompt(taskId, nodeId)
+├── 始终注入（约 800 tokens）
+│   ├── task.system_context                    ← 第2层
+│   └── project_context.architecture_summary  ← 架构摘要（预计算）
+├── 按子分组注入（约 200 tokens）
+│   └── group_context.module_summary           ← 当前模块共享资料
+├── 按节点阶段注入（约 300 tokens）
+│   └── skill.systemPrompt                     ← 第4层阶段约束
+└── 按需拉取（节点声明需要时）
+    └── project_context.fullContent            ← 某接口的完整定义
+```
+
+### Token 消耗对比
+
+| 场景 | 单次节点 | 10 工作流 × 9 节点 |
+|------|---------|-----------------|
+| 重新分析原始代码 | ~10,000 tokens | ~900,000 tokens |
+| 注入预计算摘要 | ~800 tokens | ~72,000 tokens |
+| **节省** | **92%** | **828,000 tokens** |
+
+### 失效与更新
+
+```
+代码文件变更时：
+  markStale(project_context WHERE source_file_paths 包含变更文件)
+
+节点开会话时：
+  if project_context.is_stale:
+    重新分析 → 更新 summary → is_stale = false    ← 唯一需要大 token 的时刻
+  else:
+    直接读缓存摘要（零分析消耗）
+```
+
+**知识库是项目级共享资产——工作流只是"按需借阅"，不是"每次重新研究"。**
+
+---
+
 ## 总结
 
 AI 约束不是一句 Prompt 能解决的问题，它是一个需要分层管理的系统工程：
 
-- **第2层（系统层）** 决定 AI 的"职业身份"——它是谁，在什么项目里工作
+- **第2层（系统层）** 决定 AI 的"职业身份"——它是谁，在什么项目里工作（任务级必填）
 - **第3层（工具层）** 决定 AI 能做什么操作——比 Prompt 更可靠的行为边界
 - **第4层（阶段层）** 决定 AI 在当前这个任务阶段的具体标准——核心的约束密度
 - **第5层（门控层）** 决定 AI 什么时候才算"完成"——防止 AI 自行定义完成标准
 
-**技能库和工作流构建器，本质上就是这套约束系统的可视化管理界面。** 当约束从本地文件迁移到数据库、从静态配置变成动态注入时，平台就完成了从"有约束设计"到"约束真正驱动 AI 行为"的关键跨越。
+| 问题 | 答案 |
+|------|------|
+| 技能和约束是什么关系？ | 技能 = 第 3/4/5 层约束的具名打包单位，可跨节点复用 |
+| 第 2 层归属哪里？ | 任务级（项目级），创建任务时必填，所有工作流共享 |
+| 独立会话如何注入第 2 层？ | 每次开会话从 DB 实时读取，DB 是跨会话的"记忆" |
+| 多工作流重复分析怎么解决？ | 项目知识库预计算摘要，注入摘要而不是原始代码，节省 ~92% token |
+
+**技能库和工作流构建器，本质上就是这套约束系统的可视化管理界面。** 当约束从本地文件迁移到数据库、从静态配置变成动态注入、从重复分析变成预计算复用，平台就完成了从"有约束设计"到"约束真正高效驱动 AI 行为"的关键跨越。
