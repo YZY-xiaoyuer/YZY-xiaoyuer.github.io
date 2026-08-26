@@ -4,6 +4,9 @@ date: 2026-08-26 10:00:00 +0800
 categories: [Linux]
 tags: [AI开发平台, Prompt工程, AI约束, 架构设计, Harness, 工作流, 技能库]
 description: 以 AI 嵌入式开发协作平台为工程案例，系统拆解 AI 约束的 5 层架构，详解 UI 设计、存储方案对比与运行时注入机制，给出可落地的完整设计方案。
+image:
+  path: /assets/img/posts/ai-constraint/platform-workflow.png
+  alt: AI 开发平台 9 阶段工作流看板
 ---
 
 > 本文以一个真实在建的 AI 嵌入式开发协作平台为载体，从工程角度剖析 AI 约束的层次结构，并给出可直接实施的 UI 设计、数据库方案和代码框架。
@@ -16,445 +19,284 @@ AI 大模型本身没有"职业标准"——同一个模型，不加任何约束
 
 本文讨论的平台具体场景：9 阶段嵌入式开发流水线，每个阶段的 AI 行为需要完全不同的约束（需求阶段禁止讨论实现细节，代码阶段强制 TDD，评审阶段只能标注不能修改）。
 
+下图是平台的实际工作界面——选中任务后，9 个阶段节点在顶部流水线画布中展开，点击节点启动对应阶段的 AI 代理：
+
+![平台工作流画布 — 9 阶段流水线](/assets/img/posts/ai-constraint/platform-workflow.png)
+_平台实际 UI：选中「传感器固件 v2.0」任务后，工作流画布展示 9 个阶段节点_
+
 ---
 
 ## 一、AI 约束的 5 层架构
 
-```
-┌─────────────────────────────────────────────────────┐
-│              第 1 层：模型训练层                      │
-│  Constitutional AI / RLHF / 安全对齐                 │
-│  ← 由模型提供商控制，用户不可修改                    │
-└─────────────────────────────────────────────────────┘
-                         ↓ 叠加
-┌─────────────────────────────────────────────────────┐
-│              第 2 层：运行时系统层                    │
-│  系统 Prompt / 项目上下文 / 全局角色定义              │
-│  ← 整个 Session 生效，所有节点共享                   │
-└─────────────────────────────────────────────────────┘
-                         ↓ 叠加
-┌─────────────────────────────────────────────────────┐
-│              第 3 层：工具访问层                      │
-│  工具白名单（bash / file_editor / git_worktree）     │
-│  ← 按节点类型限制 AI 的行动能力                      │
-└─────────────────────────────────────────────────────┘
-                         ↓ 叠加
-┌─────────────────────────────────────────────────────┐
-│              第 4 层：阶段约束层                      │
-│  阶段行为规范 / 输出格式 / 范式覆盖（SDD/TDD）       │
-│  ← 按当前所在阶段动态切换                            │
-└─────────────────────────────────────────────────────┘
-                         ↓ 叠加
-┌─────────────────────────────────────────────────────┐
-│              第 5 层：出口门控层                      │
-│  自动检查（lint/测试/覆盖率） + 人工审批             │
-│  ← 验证完成标准，控制流水线是否推进                  │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    L1["🔒 第1层：模型训练层\nConstitutional AI / RLHF / 安全对齐\n由模型提供商控制，用户不可修改"]
+    L2["⚙️ 第2层：运行时系统层\n系统 Prompt / 项目上下文 / 全局角色定义\n整个 Session 生效，所有节点共享"]
+    L3["🔧 第3层：工具访问层\n工具白名单（bash / file_editor / git_worktree）\n按节点类型限制 AI 的行动能力"]
+    L4["📋 第4层：阶段约束层\n阶段行为规范 / 输出格式 / 范式覆盖（SDD/TDD）\n按当前所在阶段动态切换"]
+    L5["🚦 第5层：出口门控层\n自动检查（lint/测试/覆盖率）+ 人工审批\n验证完成标准，控制流水线是否推进"]
+
+    L1 --> L2 --> L3 --> L4 --> L5
+
+    style L1 fill:#21262d,stroke:#484f58,color:#8b949e
+    style L2 fill:#1c2d4a,stroke:#388bfd,color:#58a6ff
+    style L3 fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style L4 fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style L5 fill:#3d1f1f,stroke:#f85149,color:#f85149
 ```
 
-第 1 层由模型提供商固化，第 2-5 层是平台可以管理和注入的部分，也是本文的核心。
+第 1 层由模型提供商固化，**第 2-5 层是平台可以管理和注入的部分**，也是本文的核心。
 
 ---
 
-## 二、以平台为例：各层约束的具体内容
+## 二、各层约束的具体内容（以平台为例）
 
 ### 第 2 层：运行时系统层
 
-**书写时机：** 创建任务或项目时，一次性配置
+**书写时机：** 创建任务时，定义项目级角色和技术约束
 
-**内容：** 项目角色定位、技术栈背景、不可逾越的架构边界
+**内容示例（嵌入式项目）：**
 
 ```
-你是一个嵌入式开发 AI 助手，负责协助完成 STM32F4 传感器固件开发。
+你是嵌入式开发 AI 助手，负责协助完成 STM32F4 传感器固件开发。
 
 项目约束（必须遵守）：
 - 硬件平台：STM32F4，ARM Cortex-M4，主频 168MHz，RAM 192KB
 - HAL 层必须通过：应用层禁止直接操作寄存器
 - 内存预算：单个模块堆栈使用不超过 4KB
 - 编译器：GCC ARM 12，启用 -Wall -Wextra -Werror
-
-当前任务上下文：[上游节点产出物自动注入]
 ```
 
-**当前平台存放位置：** `CLAUDE.md`（本地文件，静态）  
-**应该的位置：** 数据库 `tasks.system_context` 字段，UI 可编辑
+**当前平台存放位置：** `CLAUDE.md`（本地文件，静态）
+**改造目标：** 存入数据库 `tasks.system_context` 字段，UI 可编辑，按任务差异化配置
 
 ---
 
 ### 第 3 层：工具访问层
 
-**书写时机：** 定义技能模板时，决定这类任务允许 AI 做什么操作
+**核心价值：工具访问是比 Prompt 更可靠的约束**——即使 AI「想」执行危险操作，没有工具就无法执行。
 
-**内容：** 工具白名单
+```mermaid
+flowchart LR
+    subgraph "需求讨论阶段"
+        A[file_editor ✓]
+        B[bash ✗]
+        C[git_worktree ✗]
+    end
+    subgraph "代码开发阶段"
+        D[file_editor ✓]
+        E[bash ✓]
+        F[git_worktree ✓]
+    end
+    subgraph "方案评审阶段"
+        G[file_editor ✓ readonly]
+        H[bash ✗]
+        I[git_worktree ✗]
+    end
 
-```yaml
-# 需求讨论阶段 - 只能写文档
-tools: [file_editor]
-
-# 代码开发阶段 - 可以运行命令和操作 git
-tools: [bash, file_editor, git_worktree]
-
-# 方案评审阶段 - 只能读和标注，禁止修改
-tools: [file_editor]  # 实际应加 readonly 标记
+    style A fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style D fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style E fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style F fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style G fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style B fill:#3d1f1f,stroke:#f85149,color:#f85149
+    style C fill:#3d1f1f,stroke:#f85149,color:#f85149
+    style H fill:#3d1f1f,stroke:#f85149,color:#f85149
+    style I fill:#3d1f1f,stroke:#f85149,color:#f85149
 ```
-
-**核心价值：** 工具访问是比 Prompt 更可靠的约束——即使 AI "想"执行危险操作，没有工具就无法执行。
 
 ---
 
-### 第 4 层：阶段约束层
+### 第 4 层：阶段约束层（Harness YAML）
 
-**书写时机：** 定义技能模板时，描述这个阶段 AI 的行为规范
+这是平台中最关键的约束层，9 个阶段 YAML 文件各自定义了一套行为规范。以「代码开发」为例：
 
-**内容：** 角色约束 + 禁止行为 + 输出格式 + 完成标准
+```yaml
+# plugins/harness/stage-05-code-dev.yaml
+id: code-dev
+model_default: qwen2.5:14b
+system_prompt: |
+  【阶段约束 - 代码开发】
+  - 不得使用魔法数字：所有字面常量必须命名
+  - 每个函数必须有单元测试（TDD 风格）
+  - 禁止跨层调用：应用层不得直接操作硬件寄存器
+  - 圈复杂度（CC）不得超过 10
 
-以「代码开发」技能为例：
+tools: [bash, file_editor, git_worktree]
 
+exit_criteria:
+  lint: pass
+  coverage: ">=80"
+
+paradigm_overrides:
+  tdd: "覆盖率目标提升至 90%，关键路径 100% 分支覆盖..."
 ```
-【阶段约束 - 代码开发】
-角色：严格遵循编码规范的嵌入式工程师
 
-禁止行为：
-  × 使用魔法数字（所有字面常量必须命名）
-  × 跨层调用（应用层不得直接操作硬件寄存器）
-  × ISR 内使用 malloc/free/阻塞调用/浮点运算
-
-强制要求：
-  ✓ TDD 风格：测试先于实现
-  ✓ 圈复杂度 ≤ 10
-  ✓ 所有公共函数 Doxygen 注释
-  ✓ 对外接口检查入参并返回错误码
-
-TDD 模式增强（范式覆盖）：
-  当任务启用 TDD 范式时，覆盖率目标提升至 90%，
-  关键路径（中断处理、状态机）必须达到 100% 分支覆盖。
-
-输出要求：
-  1. 实现代码（符合模块接口设计）
-  2. 单元测试代码（正常/边界/错误三路径）
-  3. 代码自检报告（lint/typecheck/coverage）
-```
+**当前问题：** 这 9 个 YAML 文件已完整设计，但 `server/api/sessions.ts` 创建会话时**完全没有读取** `node.harnessPlugin` 字段——约束只是存在于文件里，并没有注入到 AI 执行过程中。
 
 ---
 
 ### 第 5 层：出口门控层
 
-**书写时机：** 定义技能模板时，描述阶段完成的可验证条件
+下图展示了平台实际的「工具与模型」面板，这里可以看到模型路由配置（第 3 层的一部分），但第 5 层的出口检查逻辑尚未实现：
 
-**内容：** 机器自动检查 + 人工审批要求
-
-```
-自动检查（全部通过才继续）：
-  lint: pass
-  type_check: pass
-  coverage: >=80
-  build_artifact_complete: true
-
-人工审批（阻塞，等待人点击确认）：
-  human_approval: required
-  no_blocker_unresolved: true
-```
-
-**关键设计：** 这层让 AI 无法"自行放行"——必须满足客观条件或等待人工确认，才能推进到下一节点。
+![平台工具与模型面板](/assets/img/posts/ai-constraint/platform-tools.png)
+_平台工具面板：本地模型（离线）与云端 claude-sonnet-4-6（806ms延迟），路由策略可切换_
 
 ---
 
-## 三、存储方案对比与选型
+## 三、存储方案选型
 
-### 三种候选方案
+### 三种候选方案对比
 
-| 维度 | 方案A：本地YAML文件 | 方案B：SQLite 新表 | 方案C：独立配置服务 |
-|------|---------------------|-------------------|---------------------|
+| 维度 | 方案A：本地 YAML 文件（当前） | 方案B：SQLite 新表（推荐） | 方案C：独立配置服务 |
+|------|------|------|------|
 | **动态修改** | ❌ 需重新部署 | ✅ UI 实时修改 | ✅ UI 实时修改 |
 | **版本管理** | ✅ Git 原生追踪 | ⚠️ 需手动实现 | ⚠️ 需手动实现 |
-| **查询性能** | ❌ 每次读文件 | ✅ 索引加速 | ✅ 专用缓存 |
 | **多节点复用** | ⚠️ 文件名耦合 | ✅ FK 关联 | ✅ API 调用 |
-| **技术栈一致性** | ⚠️ 独立于主DB | ✅ 同一SQLite | ❌ 增加运维复杂度 |
-| **UI 管理** | ❌ 无法在平台内管理 | ✅ 平台内CRUD | ✅ 平台内CRUD |
-| **MVP 适合度** | ⚠️ 够用但有债 | ✅ 最适合 | ❌ 过度设计 |
-| **迁移成本** | — | 低（已有SQLite） | 高（引入新依赖） |
+| **技术栈一致性** | ⚠️ 独立于主 DB | ✅ 同一 SQLite | ❌ 增加运维复杂度 |
+| **UI 管理** | ❌ 无法在平台内管理 | ✅ 平台内 CRUD | ✅ 平台内 CRUD |
+| **MVP 适合度** | ⚠️ 够用但有技术债 | ✅ 最适合 | ❌ 过度设计 |
 
-### 结论：选方案 B（SQLite 新表）
+**结论：选方案 B（SQLite 新增 `skill_templates` 表）**
 
-**理由：**
-1. 平台已用 SQLite + Drizzle ORM，零新依赖
-2. UI 可直接 CRUD，满足"在平台界面管理约束"的核心需求
-3. 约束可在多个节点间复用，技能库的本质就是约束模板复用
-4. 版本管理可通过 `updated_at` + 软删除实现，MVP 阶段足够
-
-### 推荐 Schema
+理由：平台已用 SQLite + Drizzle ORM，零新依赖；UI 可直接 CRUD；多节点复用天然支持；MVP 阶段足够。
 
 ```typescript
-// 技能模板表（技能库的数据实体）
+// 推荐 Schema
 export const skillTemplates = sqliteTable('skill_templates', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(),           // 显示名称
-  stageType: text('stage_type'),          // requirement/design/code-dev/...
+  name: text('name').notNull(),
+  stageType: text('stage_type'),
   systemPrompt: text('system_prompt').notNull(),
   toolsJson: text('tools_json').notNull().default('[]'),
-  // ["file_editor", "bash", "git_worktree"]
   exitCriteriaJson: text('exit_criteria_json').notNull().default('{}'),
-  // {"lint":"pass","coverage":">=80","human_approval":"required"}
   paradigmOverridesJson: text('paradigm_overrides_json').default('{}'),
-  // {"tdd": "TDD 模式强化：...", "sdd": "..."}
-  modelDefault: text('model_default', { enum: ['local', 'cloud', 'auto'] }).default('auto'),
-  outputArtifact: text('output_artifact'), // 产出物类型标识
-  isBuiltin: integer('is_builtin', { mode: 'boolean' }).default(false), // 内置不可删除
+  modelDefault: text('model_default').default('auto'),
+  outputArtifact: text('output_artifact'),
+  isBuiltin: integer('is_builtin', { mode: 'boolean' }).default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
-
-// nodes 表新增字段（已有 harnessPlugin，重命名为外键）
-// harnessPlugin → skillTemplateId  TEXT REFERENCES skill_templates(id)
 ```
 
 ---
 
 ## 四、UI 设计方案
 
-### 整体布局
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  顶部导航：任务 | 工作流构建器 | 技能库 | 工具 | 设置          │
-└────────────────────────────────────────────────────────────────┘
-│                                                                │
-│  ┌──────────────┐  ┌────────────────────────────────────────┐ │
-│  │  任务侧边栏   │  │           主内容区                      │ │
-│  │              │  │                                        │ │
-│  │ ▸ 任务组1    │  │  [流水线看板] [技能库] [工作流构建器]   │ │
-│  │   ├ 任务A    │  │                                        │ │
-│  │   └ 任务B    │  │  当前选中：技能库                       │ │
-│  │ ▸ 任务组2    │  │                                        │ │
-│  │              │  └────────────────────────────────────────┘ │
-│  └──────────────┘                                              │
-└────────────────────────────────────────────────────────────────┘
-```
-
 ### 技能库页面（约束管理中心）
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ 技能库                                              [+ 新建技能]      │
-├──────────────────────────────────────────────────────────────────────┤
-│ 搜索技能...    筛选: [全部 ▼]  [内置 ▼]                              │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────────────┐  ┌──────────────────────┐                  │
-│  │ 📋 需求讨论           │  │ 🏗️ 方案设计           │                  │
-│  │ stage: requirement   │  │ stage: design        │                  │
-│  │ 工具: file_editor    │  │ 工具: file_editor    │                  │
-│  │ 出口: prd完成+指标   │  │ 出口: 设计文档+评审  │                  │
-│  │ 内置 ·  [使用] [编辑]│  │ 内置 · [使用] [编辑] │                  │
-│  └──────────────────────┘  └──────────────────────┘                  │
-│                                                                      │
-│  ┌──────────────────────┐  ┌──────────────────────┐                  │
-│  │ ⚠️ 方案评审（门控）  │  │ 💻 代码开发           │                  │
-│  │ stage: review        │  │ stage: code-dev      │                  │
-│  │ 工具: file_editor    │  │ 工具: bash,file,git  │                  │
-│  │ 出口: 人工审批必须   │  │ 出口: lint+测试>=80% │                  │
-│  │ 内置 · [使用] [编辑] │  │ 内置 · [使用] [编辑] │                  │
-│  └──────────────────────┘  └──────────────────────┘                  │
-│                                                                      │
-│  ┌──────────────────────┐                                            │
-│  │ ✨ 我的自定义技能     │                                            │
-│  │ 快速代码review       │                                            │
-│  │ 工具: bash           │                                            │
-│  │ 出口: 自定义         │                                            │
-│  │ 自建 · [使用][编辑][删]                                           │
-│  └──────────────────────┘                                            │
-└──────────────────────────────────────────────────────────────────────┘
-```
+技能库是第 2-5 层约束模板的统一管理入口。下图为设计原型，视觉风格与平台现有 UI 一致：
 
-### 技能编辑器（约束 2-5 层可视化编辑）
+![技能库 UI 设计原型](/assets/img/posts/ai-constraint/mockup-skill-library.png)
+_技能库：内置 9 个阶段技能（蓝色左边框）+ 用户自建技能（绿色左边框）+ 门控技能（黄色左边框）_
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ ← 返回技能库     编辑技能：代码开发              [保存] [取消]       │
-├────────────────────┬─────────────────────────────────────────────────┤
-│                    │                                                 │
-│ 基本信息           │  第2层：系统上下文                              │
-│ ──────────         │  ┌─────────────────────────────────────────┐   │
-│ 技能名称           │  │ 你是严格遵循编码规范的嵌入式工程师。    │   │
-│ [代码开发        ] │  │                                         │   │
-│                    │  │ 【上游上下文自动注入区域，不可编辑】    │   │
-│ 阶段类型           │  └─────────────────────────────────────────┘   │
-│ [code-dev      ▼]  │                                                 │
-│                    │  第4层：阶段约束（主体行为规范）                │
-│ 默认模型           │  ┌─────────────────────────────────────────┐   │
-│ ● auto  ○ local    │  │ 【阶段约束 - 代码开发】                 │   │
-│ ○ cloud            │  │ - 不得使用魔法数字                      │   │
-│                    │  │ - 每个函数必须有单元测试                │   │
-│ 产出物标识         │  │ - 禁止跨层调用...                       │   │
-│ [code_review_pkg ] │  └─────────────────────────────────────────┘   │
-│                    │                                                 │
-│ ──────────         │  范式覆盖（可折叠）                             │
-│ 第3层：工具访问    │  ┌──────── TDD 模式 ────────┐               │   │
-│ ──────────         │  │ 覆盖率提升至90%，关键    │               │   │
-│ ☑ bash             │  │ 路径100%分支覆盖...      │               │   │
-│ ☑ file_editor      │  └─────────────────────────┘               │   │
-│ ☑ git_worktree     │                                                 │
-│ ☐ web_search       │  第5层：出口门控                                │
-│                    │  ┌─────────────────────────────────────────┐   │
-│                    │  │ 自动检查                                 │   │
-│                    │  │  lint: [pass        ]                   │   │
-│                    │  │  coverage: [>=80    ]                   │   │
-│                    │  │  [+ 添加检查项]                         │   │
-│                    │  │                                         │   │
-│                    │  │ 人工审批                                 │   │
-│                    │  │  ○ 不需要   ● 必须审批                  │   │
-│                    │  └─────────────────────────────────────────┘   │
-└────────────────────┴─────────────────────────────────────────────────┘
-```
+每张技能卡片展示：工具白名单（第 3 层）、出口条件（第 5 层）、模型配置。
+
+### 技能编辑器（分层约束可视化编辑）
+
+技能编辑器将 4 层约束在同一界面清晰呈现，左侧配置基本信息和工具权限，右侧分层编辑约束内容：
+
+![技能编辑器 UI 设计原型](/assets/img/posts/ai-constraint/mockup-skill-editor.png)
+_技能编辑器：左侧工具勾选（第3层）、右侧分层展示系统上下文（第2层）、阶段约束（第4层）、出口门控（第5层）_
 
 ### 工作流构建器（约束分配给节点）
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ 工作流构建器：传感器固件 v2.0         [保存模板] [应用到任务]        │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  技能库面板                    画布区域                              │
-│  ┌────────────┐                                                      │
-│  │ 📋 需求讨论 │    ┌─────────┐    ┌─────────┐    ┌─────────┐       │
-│  │ 🏗️ 方案设计│    │ 📋需求  │───▶│🏗️方案   │───▶│ ⚠️评审  │       │
-│  │ ⚠️ 方案评审│    │ 讨论    │    │ 设计    │    │(人工门控)│       │
-│  │ 💻 代码开发│    └─────────┘    └─────────┘    └────┬────┘       │
-│  │ 🔬 仿真验证│                                        │            │
-│  │ 📦 代码提交│                                        ▼            │
-│  │ 🧪 自动测试│                                   ┌─────────┐       │
-│  │            │                                   │ 💻代码   │       │
-│  │ ┌────────┐ │                                   │ 开发    │       │
-│  │ │自定义  │ │                                   └────┬────┘       │
-│  │ │review  │ │                                        │            │
-│  │ └────────┘ │   ← 拖拽技能到画布 →               ┌──▼─────┐       │
-│  └────────────┘                                   │ 📦提交  │       │
-│                                                   └─────────┘       │
-│                         节点属性面板（点击节点显示）                 │
-│                         ┌───────────────────────────────────┐       │
-│                         │ 节点：代码开发                     │       │
-│                         │ 技能：💻 代码开发（内置）           │       │
-│                         │ 模型覆盖：● auto ○ local ○ cloud  │       │
-│                         │ 范式覆盖：● none ○ SDD ○ TDD     │       │
-│                         └───────────────────────────────────┘       │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph 技能库面板
+        S1[📋 需求讨论]
+        S2[🏗️ 方案设计]
+        S3[⚠️ 方案评审]
+        S4[💻 代码开发]
+    end
+
+    subgraph 工作流画布
+        N1([需求讨论\n技能: S1])
+        N2([方案设计\n技能: S2])
+        N3([方案评审\n🚦门控])
+        N4([代码开发\n技能: S4\nTDD模式])
+        N5([...])
+        N1 --> N2 --> N3 --> N4 --> N5
+    end
+
+    S1 -.拖拽绑定.-> N1
+    S4 -.拖拽绑定.-> N4
+
+    subgraph 节点属性面板
+        P["绑定技能: 代码开发\n模型覆盖: auto\n范式覆盖: TDD"]
+    end
+
+    N4 -.点击.-> P
+
+    style N3 fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style S3 fill:#3d2f00,stroke:#e3b341,color:#e3b341
 ```
 
 ---
 
 ## 五、运行时约束注入架构
 
-### 完整数据流
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant F as 前端
+    participant API as sessions.ts
+    participant DB as SQLite
+    participant DSH as dsh CLI
 
-```
-用户在节点点击"启动 AI"
-         │
-         ▼
-POST /api/sessions  { taskId, nodeId, initialMessage }
-         │
-         ├─── 查询 nodes 表
-         │    → node.skillTemplateId
-         │    → node.paradigmOverride ("tdd" | "sdd" | null)
-         │    → node.modelOverride ("local" | "cloud" | "auto")
-         │
-         ├─── 查询 skill_templates 表（按 skillTemplateId）
-         │    → skill.systemPrompt      ← 第4层约束主体
-         │    → skill.toolsJson         ← 第3层工具白名单
-         │    → skill.exitCriteriaJson  ← 第5层门控配置
-         │    → skill.paradigmOverridesJson
-         │
-         ├─── 查询 tasks 表（按 taskId）
-         │    → task.systemContext      ← 第2层：项目级上下文
-         │    → task.paradigm           ← 任务级范式
-         │
-         ├─── buildUpstreamContext()
-         │    → 读上游完成节点的 artifacts
-         │    → 拼装"上游产出物"上下文段
-         │
-         ├─── assemblePrompt()          ← 核心组装函数
-         │    第2层: task.systemContext
-         │    +
-         │    第4层: skill.systemPrompt
-         │         + paradigmOverride 对应段（若有）
-         │    +
-         │    上游上下文
-         │    = finalSystemPrompt
-         │
-         ├─── buildPatchYml()
-         │    → 第3层：toolsJson → dsh tools 配置
-         │    → modelOverride → LLM 端点配置
-         │
-         ▼
-spawnDshSession({
-  systemPrompt: finalSystemPrompt,  // 第2+4层
-  patchYml: toolsAndModelConfig,    // 第3层
-  userMessage: initialMessage,
-})
-         │
-         ▼
-dsh CLI 进程运行
-（受完整约束驱动）
-         │
-         ▼ 节点完成时
-checkExitCriteria()                 ← 第5层
-  → 读 skill.exitCriteriaJson
-  → 运行 lint / 测试 / 覆盖率检查
-  → 若有 human_approval → 置 status='blocked' → 前端显示 ApprovalGate
-  → 全部通过 → status='completed' → 解锁下游节点
+    U->>F: 点击节点「代码开发」，输入消息
+    F->>API: POST /api/sessions {taskId, nodeId, message}
+
+    API->>DB: 查 nodes WHERE id=nodeId
+    DB-->>API: node {skillTemplateId, paradigmOverride, modelOverride}
+
+    API->>DB: 查 skill_templates WHERE id=skillTemplateId
+    DB-->>API: skill {systemPrompt, toolsJson, exitCriteriaJson, paradigmOverridesJson}
+
+    API->>DB: 查 tasks WHERE id=taskId
+    DB-->>API: task {systemContext, paradigm}
+
+    API->>DB: buildUpstreamContext(taskId, nodeId)
+    DB-->>API: 上游节点产出物列表
+
+    Note over API: assemblePrompt()<br/>第2层: task.systemContext<br/>第4层: skill.systemPrompt + paradigm override<br/>+ 上游产出物
+
+    API->>DSH: spawnDshSession({systemPrompt, tools, model})
+    DSH-->>F: SSE 流式 Trajectory 输出
+
+    Note over API: 节点完成时 checkExitCriteria()
+    API->>API: lint / coverage / human_approval?
+    API->>DB: 更新 nodeSession.status = completed/blocked
 ```
 
 ### 核心组装函数（代码框架）
 
 ```typescript
-// server/harness/prompt-assembler.ts
-
-export async function assembleSessionPrompt(
-  taskId: string,
-  nodeId: string
-): Promise<{ systemPrompt: string; toolsJson: string[]; exitCriteria: Record<string, string> }> {
-
-  // 查询节点 + 技能模板
+// server/harness/prompt-assembler.ts — 当前缺失的核心函数
+export async function assembleSessionPrompt(taskId: string, nodeId: string) {
   const [node] = await db.select().from(nodes).where(eq(nodes.id, nodeId))
-  const [skill] = await db
-    .select()
-    .from(skillTemplates)
+  const [skill] = await db.select().from(skillTemplates)
     .where(eq(skillTemplates.id, node.skillTemplateId ?? ''))
-
-  // 查询任务级上下文（第2层）
   const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
-
-  // 上游产出物
   const upstreamContext = await buildUpstreamContext(taskId, nodeId)
 
-  // 组装 system prompt（第2层 + 第4层）
+  // 第4层：叠加范式覆盖
   let stagePrompt = skill?.systemPrompt ?? '你是 AI 开发工作流助手。'
-
-  // 叠加范式覆盖
   const paradigm = node.paradigmOverride ?? task.paradigm ?? 'none'
   if (paradigm !== 'none' && skill?.paradigmOverridesJson) {
     const overrides = JSON.parse(skill.paradigmOverridesJson)
-    if (overrides[paradigm]) {
-      stagePrompt += `\n\n${overrides[paradigm]}`
-    }
+    if (overrides[paradigm]) stagePrompt += `\n\n${overrides[paradigm]}`
   }
 
-  const systemPrompt = [
-    task.systemContext,          // 第2层：项目级背景
-    stagePrompt,                 // 第4层：阶段约束
-    upstreamContext,             // 上游产出物注入
-  ].filter(Boolean).join('\n\n---\n\n')
-
-  // 第3层：工具白名单
-  const toolsJson: string[] = skill?.toolsJson
-    ? JSON.parse(skill.toolsJson)
-    : ['file_editor']
-
-  // 第5层：出口标准
-  const exitCriteria: Record<string, string> = skill?.exitCriteriaJson
-    ? JSON.parse(skill.exitCriteriaJson)
-    : {}
-
-  return { systemPrompt, toolsJson, exitCriteria }
+  return {
+    // 第2层 + 第4层 + 上游上下文
+    systemPrompt: [task.systemContext, stagePrompt, upstreamContext].filter(Boolean).join('\n\n---\n\n'),
+    // 第3层
+    toolsJson: skill?.toolsJson ? JSON.parse(skill.toolsJson) : ['file_editor'],
+    // 第5层
+    exitCriteria: skill?.exitCriteriaJson ? JSON.parse(skill.exitCriteriaJson) : {},
+  }
 }
 ```
 
@@ -462,64 +304,65 @@ export async function assembleSessionPrompt(
 
 ## 六、技能库与工作流构建器的关系
 
-```
-                 ┌──────────────────────────────────┐
-                 │          技能库（Skill Library）   │
-                 │                                  │
-                 │  管理 2-5 层约束的模板仓库        │
-                 │                                  │
-                 │  ┌──────────┐  ┌──────────────┐ │
-                 │  │内置技能  │  │  自定义技能   │ │
-                 │  │(9个阶段) │  │ (用户创建)   │ │
-                 │  └──────────┘  └──────────────┘ │
-                 └─────────────┬────────────────────┘
-                               │ 选择 & 绑定
-                               ▼
-                 ┌──────────────────────────────────┐
-                 │       工作流构建器                 │
-                 │                                  │
-                 │  拖拽画布：把技能分配给节点        │
-                 │                                  │
-                 │  节点 = 技能实例 + 范式覆盖        │
-                 └─────────────┬────────────────────┘
-                               │ 保存工作流模板
-                               ▼
-                 ┌──────────────────────────────────┐
-                 │         数据库                    │
-                 │  skill_templates（约束定义）      │
-                 │  nodes（绑定关系 + 覆盖配置）     │
-                 │  workflowGraphs（拓扑结构）       │
-                 └─────────────┬────────────────────┘
-                               │ 运行时查询
-                               ▼
-                 ┌──────────────────────────────────┐
-                 │      Session Manager              │
-                 │                                  │
-                 │  assemblePrompt() → dsh CLI       │
-                 │  checkExitCriteria() → 门控       │
-                 └──────────────────────────────────┘
+```mermaid
+flowchart TD
+    SL["技能库\nSkill Library\n管理 2-5 层约束的模板仓库"]
+    WB["工作流构建器\nWorkflow Builder\n拖拽画布，把技能分配给节点"]
+    DB["SQLite 数据库\nskill_templates / nodes / workflowGraphs"]
+    SM["Session Manager\nassemblePrompt() → dsh CLI"]
+    EC["Exit Checker\ncheckExitCriteria() → 门控"]
+
+    SL -->|"创建/编辑约束模板"| DB
+    WB -->|"节点绑定 skillTemplateId"| DB
+    DB -->|"运行时查询"| SM
+    DB -->|"出口标准查询"| EC
+    SM -->|"注入约束 → AI 执行"| EC
+
+    style SL fill:#1c2d4a,stroke:#388bfd,color:#58a6ff
+    style WB fill:#1a3a2a,stroke:#3fb950,color:#3fb950
+    style DB fill:#21262d,stroke:#484f58,color:#8b949e
+    style SM fill:#3d2f00,stroke:#e3b341,color:#e3b341
+    style EC fill:#3d1f1f,stroke:#f85149,color:#f85149
 ```
 
-**技能库 = 约束定义层**（写约束是什么）  
-**工作流构建器 = 约束分配层**（决定哪个节点用哪个约束）  
-**Session Manager = 约束注入层**（运行时把约束送进 AI）
+- **技能库 = 约束定义层**（写约束是什么）
+- **工作流构建器 = 约束分配层**（决定哪个节点用哪个约束）
+- **Session Manager = 约束注入层**（运行时把约束送进 AI）
 
 三者合一，才构成完整的 AI 约束系统。
 
 ---
 
-## 七、当前平台的改造路径（优先级排序）
+## 七、当前平台的改造路径
 
-| 优先级 | 改造项 | 工作量 | 收益 |
-|--------|--------|--------|------|
-| P0 | 新增 `skill_templates` 表，迁移 9 个 YAML | 小 | 解锁 UI 管理 |
-| P0 | `sessions.ts` 实现 `assemblePrompt()`，接入约束注入 | 中 | 让约束真正生效 |
-| P1 | 技能库 CRUD 页面（列表+编辑器） | 中 | 用户可创建自定义技能 |
+```mermaid
+gantt
+    title 约束系统改造路径
+    dateFormat  X
+    axisFormat %s
+
+    section P0（2-3天）
+    新增 skill_templates 表，迁移 9 个 YAML    :done, 0, 1
+    sessions.ts 实现 assemblePrompt() 注入      :done, 1, 2
+
+    section P1（1周）
+    技能库 CRUD 页面（列表+编辑器）            :active, 2, 4
+    exit-checker.ts 实现门控逻辑               :active, 3, 5
+
+    section P2（2-3周）
+    工作流构建器：拖拽 + 技能选择面板           :6, 9
+    任务级 systemContext 字段 + 编辑 UI         :6, 7
+```
+
+| 优先级 | 改造项 | 工作量 | 核心收益 |
+|--------|--------|--------|---------|
+| **P0** | 新增 `skill_templates` 表，迁移 9 个 YAML | 小 | 解锁 UI 管理，为 P1 铺路 |
+| **P0** | `sessions.ts` 实现 `assemblePrompt()`，接入约束注入 | 中 | **让约束真正生效** |
+| P1 | 技能库 CRUD 页面 | 中 | 用户可创建自定义技能 |
 | P1 | `exit-checker.ts` 实现门控逻辑 | 中 | 第5层开始工作 |
 | P2 | 工作流构建器：拖拽 + 技能选择面板 | 大 | 可视化分配约束 |
-| P2 | 任务级 `system_context` 字段 + 编辑 UI | 小 | 第2层可定制 |
 
-**最小有效改造（P0 两项）：** 约 2-3 天工作量，即可让现有 9 个约束真正在运行时生效，从"有设计但不运行"变成"设计即生效"。
+**最小有效改造（P0 两项）：** 约 2-3 天工作量，即可让现有 9 个精心设计的约束真正在运行时生效。
 
 ---
 
@@ -532,4 +375,4 @@ AI 约束不是一句 Prompt 能解决的问题，它是一个需要分层管理
 - **第4层（阶段层）** 决定 AI 在当前这个任务阶段的具体标准——核心的约束密度
 - **第5层（门控层）** 决定 AI 什么时候才算"完成"——防止 AI 自行定义完成标准
 
-技能库和工作流构建器，本质上就是这套约束系统的可视化管理界面。当约束从本地文件迁移到数据库、从静态配置变成动态注入时，平台就完成了从"有约束设计"到"约束真正驱动 AI 行为"的关键跨越。
+**技能库和工作流构建器，本质上就是这套约束系统的可视化管理界面。** 当约束从本地文件迁移到数据库、从静态配置变成动态注入时，平台就完成了从"有约束设计"到"约束真正驱动 AI 行为"的关键跨越。
